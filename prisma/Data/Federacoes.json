@@ -1,0 +1,164 @@
+[
+  {
+    "nome": "Federação de Empresas Juniores do Acre",
+    "sigla": "Acre Júnior",
+    "estado": "AC",
+    "regiao": "Norte"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado de Alagoas",
+    "sigla": "FEJEA",
+    "estado": "AL",
+    "regiao": "Nordeste"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado do Amapá",
+    "sigla": "FEJEAP",
+    "estado": "AP",
+    "regiao": "Norte"
+  },
+  {
+    "nome": "Federação de Empresas Juniores do Estado do Amazonas",
+    "sigla": "Baré Júnior",
+    "estado": "AM",
+    "regiao": "Norte"
+  },
+  {
+    "nome": "União das Empresas Juniores do Estado da Bahia",
+    "sigla": "UNIJr-BA",
+    "estado": "BA",
+    "regiao": "Nordeste"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Ceará",
+    "sigla": "FEJECE",
+    "estado": "CE",
+    "regiao": "Nordeste"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Distrito Federal",
+    "sigla": "Concentro",
+    "estado": "DF",
+    "regiao": "Centro-Oeste"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Espírito Santo",
+    "sigla": "Juniores",
+    "estado": "ES",
+    "regiao": "Sudeste"
+  },
+  {
+    "nome": "Federação Goiana de Empresas Juniores",
+    "sigla": "Goiás Júnior",
+    "estado": "GO",
+    "regiao": "Centro-Oeste"
+  },
+  {
+    "nome": "Federação Maranhense de Empresas Juniores",
+    "sigla": "Maranhão Júnior",
+    "estado": "MA",
+    "regiao": "Nordeste"
+  },
+  {
+    "nome": "Associação de Empresários Juniores do Estado de Mato Grosso",
+    "sigla": "FEMTEJ",
+    "estado": "MT",
+    "regiao": "Centro-Oeste"
+  },
+  {
+    "nome": "Federação de Empresas Juniores do Estado de Mato Grosso do Sul",
+    "sigla": "FEJEMS",
+    "estado": "MS",
+    "regiao": "Centro-Oeste"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado de Minas Gerais",
+    "sigla": "FEJEMG",
+    "estado": "MG",
+    "regiao": "Sudeste"
+  },
+  {
+    "nome": "Federação Paraense de Empresas Juniores",
+    "sigla": "Pará Júnior",
+    "estado": "PA",
+    "regiao": "Norte"
+  },
+  {
+    "nome": "Federação Paraibana de Empresas Juniores",
+    "sigla": "PB Júnior",
+    "estado": "PB",
+    "regiao": "Nordeste"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado do Paraná",
+    "sigla": "FEJEPAR",
+    "estado": "PR",
+    "regiao": "Sul"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado de Pernambuco",
+    "sigla": "FEJEPE",
+    "estado": "PE",
+    "regiao": "Nordeste"
+  },
+  {
+    "nome": "Federação Piauiense de Empresas Juniores",
+    "sigla": "Piauí Júnior",
+    "estado": "PI",
+    "regiao": "Nordeste"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado do Rio de Janeiro",
+    "sigla": "RioJunior",
+    "estado": "RJ",
+    "regiao": "Sudeste"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado do Rio Grande do Norte",
+    "sigla": "RN Júnior",
+    "estado": "RN",
+    "regiao": "Nordeste"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado do Rio Grande do Sul",
+    "sigla": "FEJERS",
+    "estado": "RS",
+    "regiao": "Sul"
+  },
+  {
+    "nome": "Federação de Empresas Juniores do Estado de Rondônia",
+    "sigla": "FEJERO",
+    "estado": "RO",
+    "regiao": "Norte"
+  },
+  {
+    "nome": "Federação de Empresas Juniores do Estado de Roraima",
+    "sigla": "Roraima Júnior",
+    "estado": "RR",
+    "regiao": "Norte"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado de Santa Catarina",
+    "sigla": "FEJESC",
+    "estado": "SC",
+    "regiao": "Sul"
+  },
+  {
+    "nome": "Federação das Empresas Juniores do Estado de São Paulo",
+    "sigla": "FEJESP",
+    "estado": "SP",
+    "regiao": "Sudeste"
+  },
+  {
+    "nome": "Federação Sergipana de Empresas Juniores",
+    "sigla": "SERJÚNIOR",
+    "estado": "SE",
+    "regiao": "Nordeste"
+  },
+  {
+    "nome": "Federação de Empresas Juniores do Tocantins",
+    "sigla": "TO Júnior",
+    "estado": "TO",
+    "regiao": "Norte"
+  }
+]
