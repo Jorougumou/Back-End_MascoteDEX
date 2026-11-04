@@ -6,11 +6,17 @@ import {
 import { env } from "@/Config/Env";
 import { healthRoutes } from "@/Modules/Health/HealthRoutes";
 import { errorHandler, notFoundHandler } from "@/Shared/Errors/ErrorHandler";
+import { registerSecurity } from "@/Shared/Plugins/SecurityPlugin";
+import { registerSwagger } from "@/Shared/Plugins/SwaggerPlugin";
 
-// Será estendido com { storage } na T-14, para injetar um StorageProvider falso nos testes.
-export type AppOverrides = Record<string, never>;
+const DEFAULT_RATE_LIMIT_MAX = 100;
 
-export function buildApp(_overrides: AppOverrides = {}) {
+// Será estendido com { storage } para injetar um StorageProvider falso nos testes.
+export interface AppOverrides {
+  rateLimitMax?: number;
+}
+
+export function buildApp(overrides: AppOverrides = {}) {
   const app = Fastify({
     trustProxy: true,
     logger: {
@@ -34,6 +40,11 @@ export function buildApp(_overrides: AppOverrides = {}) {
   app.setSerializerCompiler(serializerCompiler);
   app.setErrorHandler(errorHandler);
   app.setNotFoundHandler(notFoundHandler);
+
+  registerSecurity(app, {
+    rateLimitMax: overrides.rateLimitMax ?? DEFAULT_RATE_LIMIT_MAX,
+  });
+  registerSwagger(app);
 
   app.register(healthRoutes);
 
