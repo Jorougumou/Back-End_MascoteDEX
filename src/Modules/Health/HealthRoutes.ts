@@ -7,6 +7,9 @@ export async function healthRoutes(app: FastifyInstance) {
     "/health",
     {
       schema: {
+        tags: ["Health"],
+        summary: "Verifica se a API está no ar",
+        description: "Liveness: não consulta o banco de dados.",
         response: {
           200: z.object({
             status: z.literal("ok"),
