@@ -4,8 +4,10 @@ import {
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import { env } from "@/Config/Env";
+import { authRoutes } from "@/Modules/Auth/AuthRoutes";
 import { healthRoutes } from "@/Modules/Health/HealthRoutes";
 import { errorHandler, notFoundHandler } from "@/Shared/Errors/ErrorHandler";
+import { buildContainer } from "@/Shared/Container";
 import { registerSecurity } from "@/Shared/Plugins/SecurityPlugin";
 import { registerSwagger } from "@/Shared/Plugins/SwaggerPlugin";
 
@@ -46,7 +48,10 @@ export function buildApp(overrides: AppOverrides = {}) {
   });
   registerSwagger(app);
 
+  const container = buildContainer();
+
   app.register(healthRoutes);
+  app.register(authRoutes, { authService: container.authService });
 
   return app;
 }
