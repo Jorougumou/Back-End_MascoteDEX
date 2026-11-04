@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Perfil {
+  MEMBRO
+  DIREX
+}
+
+model Usuario {
+  id        String   @id @default(uuid()) @db.Uuid @map("id_usuario")
+  nome      String   @db.VarChar(120)
+  email     String   @unique @db.VarChar(160)
+  senhaHash String   @map("senha_hash") @db.VarChar(255)
+  perfil    Perfil   @default(MEMBRO)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  eventos  Evento[]
+  mascotes Mascote[]
+  capturas Captura[]
+
+  @@map("usuario")
+}
+
+model Federacao {
+  id     String @id @default(uuid()) @db.Uuid @map("id_federacao")
+  nome   String @db.VarChar(120)
+  sigla  String @unique @db.VarChar(20)
+  estado String @db.Char(2)
+  regiao String @db.VarChar(20)
+
+  empresasJuniores EmpresaJunior[]
+
+  @@index([estado])
+  @@map("federacao")
+}
+
+model EmpresaJunior {
+  id              String  @id @default(uuid()) @db.Uuid @map("id_empresa_junior")
+  nome            String  @db.VarChar(120)
+  nomeNormalizado String  @map("nome_normalizado") @db.VarChar(120)
+  universidade    String  @db.VarChar(160)
+  curiosidades    String? @db.Text
+  federacaoId     String  @map("id_federacao") @db.Uuid
+
+  federacao Federacao @relation(fields: [federacaoId], references: [id])
+  mascotes  Mascote[]
+
+  @@unique([federacaoId, nomeNormalizado])
+  @@index([nomeNormalizado])
+  @@map("empresa_junior")
+}
+
+model Mascote {
+  id              String   @id @default(uuid()) @db.Uuid @map("id_mascote")
+  nome            String   @db.VarChar(120)
+  nomeNormalizado String   @map("nome_normalizado") @db.VarChar(120)
+  fotoUrl         String   @map("foto_url") @db.VarChar(500)
+  empresaJuniorId String   @map("id_empresa_junior") @db.Uuid
+  usuarioId       String   @map("id_usuario") @db.Uuid
+  criadoEm        DateTime @default(now()) @map("criado_em")
+
+  empresaJunior EmpresaJunior @relation(fields: [empresaJuniorId], references: [id])
+  usuario       Usuario       @relation(fields: [usuarioId], references: [id])
+  capturas      Captura[]
+
+  @@unique([empresaJuniorId, nomeNormalizado])
+  @@index([criadoEm])
+  @@map("mascote")
+}
+
+model Evento {
+  id         String   @id @default(uuid()) @db.Uuid @map("id_evento")
+  nome       String   @db.VarChar(120)
+  local      String   @db.VarChar(160)
+  dataInicio DateTime @map("data_inicio") @db.Date
+  dataFim    DateTime @map("data_fim") @db.Date
+  usuarioId  String   @map("id_usuario") @db.Uuid
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  usuario  Usuario   @relation(fields: [usuarioId], references: [id])
+  capturas Captura[]
+
+  @@index([dataInicio])
+  @@map("evento")
+}
+
+model Captura {
+  id             String   @id @default(uuid()) @db.Uuid @map("id_captura")
+  usuarioId      String   @map("id_usuario") @db.Uuid
+  mascoteId      String   @map("id_mascote") @db.Uuid
+  eventoId       String   @map("id_evento") @db.Uuid
+  fotoUrl        String   @map("foto_url") @db.VarChar(500)
+  capturadoEm    DateTime @map("capturado_em")
+  sincronizadoEm DateTime @default(now()) @map("sincronizado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  mascote Mascote @relation(fields: [mascoteId], references: [id])
+  evento  Evento  @relation(fields: [eventoId], references: [id])
+
+  @@unique([usuarioId, mascoteId, eventoId])
+  @@index([eventoId])
+  @@index([mascoteId])
+  @@index([usuarioId, capturadoEm])
+  @@map("captura")
+}
