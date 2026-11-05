@@ -9,10 +9,23 @@ export interface NovoUsuario {
   senhaHash: string;
 }
 
+export interface UsuarioComSenha extends UsuarioPublico {
+  senhaHash: string;
+}
+
 export interface AuthRepository {
   existePorEmail(email: string): Promise<boolean>;
+  buscarPorEmail(email: string): Promise<UsuarioComSenha | null>;
+  buscarPorId(id: string): Promise<UsuarioPublico | null>;
   criar(dados: NovoUsuario): Promise<UsuarioPublico>;
 }
+
+const selectPublico = {
+  id: true,
+  nome: true,
+  email: true,
+  perfil: true,
+} as const;
 
 export function createAuthRepository(prisma: PrismaClient): AuthRepository {
   return {
@@ -21,11 +34,25 @@ export function createAuthRepository(prisma: PrismaClient): AuthRepository {
       return total > 0;
     },
 
+    buscarPorEmail(email) {
+      return prisma.usuario.findUnique({
+        where: { email },
+        select: { ...selectPublico, senhaHash: true },
+      });
+    },
+
+    buscarPorId(id) {
+      return prisma.usuario.findUnique({
+        where: { id },
+        select: selectPublico,
+      });
+    },
+
     async criar(dados) {
       try {
         return await prisma.usuario.create({
           data: { ...dados, perfil: "MEMBRO" },
-          select: { id: true, nome: true, email: true, perfil: true },
+          select: selectPublico,
         });
       } catch (error) {
         if (

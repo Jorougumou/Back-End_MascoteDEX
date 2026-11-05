@@ -21,6 +21,14 @@ export const registerBodySchema = z.object({
     .max(128, "a senha deve ter no máximo 128 caracteres"),
 });
 
+export const loginBodySchema = z.object({
+  email: emailSchema,
+  senha: z
+    .string()
+    .min(1, "informe a senha")
+    .max(128, "a senha deve ter no máximo 128 caracteres"),
+});
+
 export const usuarioPublicoSchema = z.object({
   id: z.uuid(),
   nome: z.string(),
@@ -28,5 +36,11 @@ export const usuarioPublicoSchema = z.object({
   perfil: z.enum(["MEMBRO", "DIREX"]),
 });
 
+export const loginResponseSchema = z.object({
+  token: z.string(),
+  usuario: usuarioPublicoSchema,
+});
+
 export type RegisterBody = z.infer<typeof registerBodySchema>;
+export type LoginBody = z.infer<typeof loginBodySchema>;
 export type UsuarioPublico = z.infer<typeof usuarioPublicoSchema>;
