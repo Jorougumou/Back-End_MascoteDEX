@@ -11,6 +11,7 @@ import { buildContainer } from "@/Shared/Container";
 import { registerAuth } from "@/Shared/Plugins/AuthPlugin";
 import { registerSecurity } from "@/Shared/Plugins/SecurityPlugin";
 import { registerSwagger } from "@/Shared/Plugins/SwaggerPlugin";
+import { eventoRoutes } from "@/Modules/Eventos/EventoRoutes";
 
 const DEFAULT_RATE_LIMIT_MAX = 100;
 
@@ -61,6 +62,7 @@ export function buildApp(overrides: AppOverrides = {}) {
     authService: container.authService,
     authRateLimitMax: overrides.authRateLimitMax ?? env.RATE_LIMIT_AUTH_MAX,
   });
+  app.register(eventoRoutes, { eventoService: container.eventoService });
 
   return app;
 }
