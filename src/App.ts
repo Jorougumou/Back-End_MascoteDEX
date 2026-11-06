@@ -6,6 +6,7 @@ import {
 import { env } from "@/Config/Env";
 import { authRoutes } from "@/Modules/Auth/AuthRoutes";
 import { healthRoutes } from "@/Modules/Health/HealthRoutes";
+import { mascoteRoutes } from "@/Modules/Mascotes/MascoteRoutes";
 import { errorHandler, notFoundHandler } from "@/Shared/Errors/ErrorHandler";
 import { buildContainer } from "@/Shared/Container";
 import { registerAuth } from "@/Shared/Plugins/AuthPlugin";
@@ -64,6 +65,8 @@ export function buildApp(overrides: AppOverrides = {}) {
     authService: container.authService,
     authRateLimitMax: overrides.authRateLimitMax ?? env.RATE_LIMIT_AUTH_MAX,
   });
+
+  app.register(mascoteRoutes, { mascoteService: container.mascoteService });
   app.register(eventoRoutes, { eventoService: container.eventoService });
 
   return app;
