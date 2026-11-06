@@ -11,6 +11,7 @@ import { buildContainer } from "@/Shared/Container";
 import { registerAuth } from "@/Shared/Plugins/AuthPlugin";
 import { registerSecurity } from "@/Shared/Plugins/SecurityPlugin";
 import { registerSwagger } from "@/Shared/Plugins/SwaggerPlugin";
+import { registerMultipart } from "./Shared/Plugins/MultipartPlugin";
 
 const DEFAULT_RATE_LIMIT_MAX = 100;
 
@@ -49,6 +50,7 @@ export function buildApp(overrides: AppOverrides = {}) {
     rateLimitMax: overrides.rateLimitMax ?? DEFAULT_RATE_LIMIT_MAX,
   });
   registerSwagger(app);
+  registerMultipart(app);
   registerAuth(app, {
     secret: env.JWT_SECRET,
     expiresIn: env.JWT_EXPIRES_IN,
