@@ -1,3 +1,4 @@
+import { contemHtml } from "@/Shared/Utils/Sanitize";
 import { z } from "zod";
 
 export const ErrorResponseSchema = z.object({
@@ -24,6 +25,15 @@ export function paginatedResponseSchema<T extends z.ZodType>(item: T) {
     data: z.array(item),
     meta: paginationMetaSchema,
   });
+}
+
+export function textoSemHtml(min: number, max: number) {
+  return z
+    .string()
+    .trim()
+    .min(min, `deve ter no mínimo ${min} caracteres`)
+    .max(max, `deve ter no máximo ${max} caracteres`)
+    .refine((valor) => !contemHtml(valor), "não pode conter < ou >");
 }
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;

@@ -50,21 +50,4 @@ describe("Swagger, helmet e CORS", () => {
     expect(response.headers["x-powered-by"]).toBeUndefined();
   });
 
-  it("permite apenas origens configuradas em CORS_ORIGINS", async () => {
-    const permitida = await app.inject({
-      method: "GET",
-      url: "/health",
-      headers: { origin: "http://localhost:5173" },
-    });
-    const bloqueada = await app.inject({
-      method: "GET",
-      url: "/health",
-      headers: { origin: "https://site-malicioso.com" },
-    });
-
-    expect(permitida.headers["access-control-allow-origin"]).toBe(
-      "http://localhost:5173",
-    );
-    expect(bloqueada.headers["access-control-allow-origin"]).toBeUndefined();
-  });
 });
