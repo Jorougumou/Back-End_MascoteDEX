@@ -41,5 +41,40 @@ export const galeriaQuerySchema = paginationQuerySchema.extend({
 export const galeriaResponseSchema =
   paginatedResponseSchema(mascoteGaleriaSchema);
 
+export const mascoteParamsSchema = z.object({
+  id: z.uuid(),
+});
+
+// RF007, RN017: evento em que o mascote foi capturado (datas em YYYY-MM-DD).
+export const eventoDoMascoteSchema = z.object({
+  id: z.uuid(),
+  nome: z.string(),
+  local: z.string(),
+  dataInicio: z.string(),
+  dataFim: z.string(),
+});
+
+export const mascotePerfilSchema = z.object({
+  id: z.uuid(),
+  nome: z.string(),
+  fotoUrl: z.string(),
+  // Mesma regra da galeria (RF005): o usuário logado já capturou este mascote.
+  capturado: z.boolean(),
+  empresaJunior: z.object({
+    id: z.uuid(),
+    nome: z.string(),
+    universidade: z.string(),
+    curiosidades: z.string().nullable(),
+  }),
+  federacao: z.object({
+    nome: z.string(),
+    sigla: z.string(),
+    estado: z.string(),
+    regiao: z.string(),
+  }),
+  eventos: z.array(eventoDoMascoteSchema),
+});
+
 export type MascoteGaleria = z.infer<typeof mascoteGaleriaSchema>;
 export type GaleriaQuery = z.infer<typeof galeriaQuerySchema>;
+export type MascotePerfil = z.infer<typeof mascotePerfilSchema>;
