@@ -1,10 +1,18 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { MascoteGaleria } from "./MascoteSchemas";
+
+export interface FiltrosGaleria {
+  estado?: string;
+  federacaoId?: string;
+  empresaJuniorNormalizado?: string;
+  minhaColecao: boolean;
+}
 
 export interface ListarGaleriaArgs {
   usuarioId: string;
   skip: number;
   take: number;
+  filtros: FiltrosGaleria;
 }
 
 export interface MascoteRepository {
@@ -13,14 +21,49 @@ export interface MascoteRepository {
   ): Promise<{ itens: MascoteGaleria[]; total: number }>;
 }
 
+// RN013: filtros combinados com AND. Só entra no where o que foi informado.
+export function montarWhereGaleria(
+  usuarioId: string,
+  filtros: FiltrosGaleria,
+): Prisma.MascoteWhereInput {
+  const empresaJunior: Prisma.EmpresaJuniorWhereInput = {};
+
+  if (filtros.federacaoId) {
+    empresaJunior.federacaoId = filtros.federacaoId;
+  }
+  if (filtros.estado) {
+    empresaJunior.federacao = { estado: filtros.estado };
+  }
+  if (filtros.empresaJuniorNormalizado) {
+    // nomeNormalizado já está sem acento e em minúsculas (busca parcial).
+    empresaJunior.nomeNormalizado = {
+      contains: filtros.empresaJuniorNormalizado,
+    };
+  }
+
+  const where: Prisma.MascoteWhereInput = {};
+
+  if (Object.keys(empresaJunior).length > 0) {
+    where.empresaJunior = empresaJunior;
+  }
+  if (filtros.minhaColecao) {
+    where.capturas = { some: { usuarioId } };
+  }
+
+  return where;
+}
+
 export function createMascoteRepository(
   prisma: PrismaClient,
 ): MascoteRepository {
   return {
-    // RF005, RNF009: uma única consulta com join (sem N+1).
-    async listarGaleria({ usuarioId, skip, take }) {
+    // RF005, RF006, RNF009: uma única consulta com join (sem N+1).
+    async listarGaleria({ usuarioId, skip, take, filtros }) {
+      const where = montarWhereGaleria(usuarioId, filtros);
+
       const [registros, total] = await prisma.$transaction([
         prisma.mascote.findMany({
+          where,
           skip,
           take,
           orderBy: [{ criadoEm: "desc" }, { id: "asc" }],
@@ -45,7 +88,8 @@ export function createMascoteRepository(
             },
           },
         }),
-        prisma.mascote.count(),
+        // O total usa o mesmo where, para a paginação refletir os filtros.
+        prisma.mascote.count({ where }),
       ]);
 
       const itens = registros.map((mascote) => ({
