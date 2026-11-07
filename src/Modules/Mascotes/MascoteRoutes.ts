@@ -2,7 +2,12 @@ import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { authenticate } from "@/Shared/Plugins/AuthPlugin";
 import { ErrorResponseSchema } from "@/Shared/Schemas/Common";
-import { galeriaQuerySchema, galeriaResponseSchema } from "./MascoteSchemas";
+import {
+  galeriaQuerySchema,
+  galeriaResponseSchema,
+  mascoteParamsSchema,
+  mascotePerfilSchema,
+} from "./MascoteSchemas";
 import type { MascoteService } from "./MascoteService";
 
 interface MascoteRoutesOptions {
@@ -34,5 +39,28 @@ export const mascoteRoutes: FastifyPluginAsync<MascoteRoutesOptions> = async (
     },
     async (request) =>
       mascoteService.listarGaleria(request.user.sub, request.query),
+  );
+
+  app.withTypeProvider<ZodTypeProvider>().get(
+    "/mascotes/:id",
+    {
+      preHandler: authenticate,
+      schema: {
+        tags: ["Mascotes"],
+        summary: "Perfil detalhado do mascote",
+        description:
+          "Retorna foto, nome, EJ (com universidade e curiosidades), federação/região e os eventos, com datas, em que o mascote foi capturado (mais recentes primeiro; cada evento aparece uma vez). Mascote inexistente retorna 404.",
+        security: [{ bearerAuth: [] }],
+        params: mascoteParamsSchema,
+        response: {
+          200: mascotePerfilSchema,
+          400: ErrorResponseSchema,
+          401: ErrorResponseSchema,
+          404: ErrorResponseSchema,
+          429: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request) => mascoteService.buscarPerfil(request.params.id),
   );
 };

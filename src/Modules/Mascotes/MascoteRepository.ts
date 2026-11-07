@@ -15,10 +15,33 @@ export interface ListarGaleriaArgs {
   filtros: FiltrosGaleria;
 }
 
+export interface EventoDoMascoteRegistro {
+  id: string;
+  nome: string;
+  local: string;
+  dataInicio: Date;
+  dataFim: Date;
+}
+
+export interface PerfilMascoteRegistro {
+  id: string;
+  nome: string;
+  fotoUrl: string;
+  empresaJunior: {
+    id: string;
+    nome: string;
+    universidade: string;
+    curiosidades: string | null;
+    federacao: { nome: string; sigla: string; estado: string; regiao: string };
+  };
+  eventos: EventoDoMascoteRegistro[];
+}
+
 export interface MascoteRepository {
   listarGaleria(
     args: ListarGaleriaArgs,
   ): Promise<{ itens: MascoteGaleria[]; total: number }>;
+  buscarPerfil(id: string): Promise<PerfilMascoteRegistro | null>;
 }
 
 // RN013: filtros combinados com AND. Só entra no where o que foi informado.
@@ -105,6 +128,48 @@ export function createMascoteRepository(
       }));
 
       return { itens, total };
+    },
+
+    // RF007, RN017: dados do mascote, da EJ e da federação, mais os eventos
+    // em que ele foi capturado (cada evento aparece uma única vez).
+    async buscarPerfil(id) {
+      const mascote = await prisma.mascote.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          nome: true,
+          fotoUrl: true,
+          empresaJunior: {
+            select: {
+              id: true,
+              nome: true,
+              universidade: true,
+              curiosidades: true,
+              federacao: {
+                select: { nome: true, sigla: true, estado: true, regiao: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (!mascote) {
+        return null;
+      }
+
+      const eventos = await prisma.evento.findMany({
+        where: { capturas: { some: { mascoteId: id } } },
+        orderBy: [{ dataInicio: "desc" }, { id: "asc" }],
+        select: {
+          id: true,
+          nome: true,
+          local: true,
+          dataInicio: true,
+          dataFim: true,
+        },
+      });
+
+      return { ...mascote, eventos };
     },
   };
 }
