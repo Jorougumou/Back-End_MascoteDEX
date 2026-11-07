@@ -14,6 +14,9 @@ function criarRepositorioFalso(total: number) {
       chamadas.push(args);
       return { itens: [], total };
     },
+    async buscarPerfil() {
+      return null;
+    },
   };
 
   return { repository, chamadas };
