@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { paginatedResponseSchema } from "@/Shared/Schemas/Common";
+import {
+  paginatedResponseSchema,
+  paginationQuerySchema,
+  textoSemHtml,
+} from "@/Shared/Schemas/Common";
 
 export const mascoteGaleriaSchema = z.object({
   id: z.uuid(),
@@ -17,7 +21,25 @@ export const mascoteGaleriaSchema = z.object({
   capturado: z.boolean(),
 });
 
+// RF006, RN013: todos os filtros são opcionais e podem ser combinados.
+export const galeriaQuerySchema = paginationQuerySchema.extend({
+  estado: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z]{2}$/, "o estado deve ter 2 letras (ex.: SP)")
+    .transform((valor) => valor.toUpperCase())
+    .optional(),
+  federacaoId: z.uuid().optional(),
+  empresaJunior: textoSemHtml(1, 120).optional(),
+  // z.coerce.boolean() trataria "false" como true; por isso o enum explícito.
+  minhaColecao: z
+    .enum(["true", "false"])
+    .transform((valor) => valor === "true")
+    .default(false),
+});
+
 export const galeriaResponseSchema =
   paginatedResponseSchema(mascoteGaleriaSchema);
 
 export type MascoteGaleria = z.infer<typeof mascoteGaleriaSchema>;
+export type GaleriaQuery = z.infer<typeof galeriaQuerySchema>;
