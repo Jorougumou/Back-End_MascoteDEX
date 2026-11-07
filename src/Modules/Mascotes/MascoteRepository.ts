@@ -27,6 +27,7 @@ export interface PerfilMascoteRegistro {
   id: string;
   nome: string;
   fotoUrl: string;
+  capturado: boolean;
   empresaJunior: {
     id: string;
     nome: string;
@@ -41,7 +42,10 @@ export interface MascoteRepository {
   listarGaleria(
     args: ListarGaleriaArgs,
   ): Promise<{ itens: MascoteGaleria[]; total: number }>;
-  buscarPerfil(id: string): Promise<PerfilMascoteRegistro | null>;
+  buscarPerfil(
+    id: string,
+    usuarioId: string,
+  ): Promise<PerfilMascoteRegistro | null>;
 }
 
 // RN013: filtros combinados com AND. Só entra no where o que foi informado.
@@ -132,13 +136,21 @@ export function createMascoteRepository(
 
     // RF007, RN017: dados do mascote, da EJ e da federação, mais os eventos
     // em que ele foi capturado (cada evento aparece uma única vez).
-    async buscarPerfil(id) {
+    // `capturado` indica se o usuário logado já capturou o mascote (como na
+    // galeria), sem consulta extra: vem junto da busca do mascote.
+    async buscarPerfil(id, usuarioId) {
       const mascote = await prisma.mascote.findUnique({
         where: { id },
         select: {
           id: true,
           nome: true,
           fotoUrl: true,
+          // Só as capturas do usuário logado; basta saber se existe uma.
+          capturas: {
+            where: { usuarioId },
+            select: { id: true },
+            take: 1,
+          },
           empresaJunior: {
             select: {
               id: true,
@@ -169,7 +181,9 @@ export function createMascoteRepository(
         },
       });
 
-      return { ...mascote, eventos };
+      const { capturas, ...dados } = mascote;
+
+      return { ...dados, capturado: capturas.length > 0, eventos };
     },
   };
 }

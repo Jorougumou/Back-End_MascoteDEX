@@ -28,6 +28,8 @@ async function cadastrarELogar(app: TestApp, email: string) {
 async function cenario(app: TestApp) {
   const ana = await cadastrarELogar(app, "ana@email.com");
   const bia = await cadastrarELogar(app, "bia@email.com");
+  // Cadu nunca captura nada: serve para provar que `capturado` é por usuário.
+  const cadu = await cadastrarELogar(app, "cadu@email.com");
 
   const federacao = await prisma.federacao.create({
     data: {
@@ -105,6 +107,7 @@ async function cenario(app: TestApp) {
       },
     });
   // Leão: capturado por Ana e Bia em Janeiro, só por Ana em Maio (Março não).
+  // Bia só capturou o Leão (nunca o Tigre); Cadu não capturou nenhum.
   await capturar(ana.id, leao.id, eventoJan.id);
   await capturar(bia.id, leao.id, eventoJan.id);
   await capturar(ana.id, leao.id, eventoMai.id);
@@ -114,6 +117,7 @@ async function cenario(app: TestApp) {
   return {
     ana,
     bia,
+    cadu,
     leao,
     tigre,
     federacao,
@@ -169,7 +173,7 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
     });
   });
 
-  it("200 com foto, nome, EJ, universidade, curiosidades e federação/região", async () => {
+  it("200 com foto, nome, capturado, EJ, universidade, curiosidades e federação/região", async () => {
     const c = await cenario(app);
 
     const resposta = await get(c.ana.token, c.leao.id);
@@ -180,6 +184,7 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
       id: c.leao.id,
       nome: "Leão",
       fotoUrl: "https://exemplo.com/Leão.jpg",
+      capturado: true,
       empresaJunior: {
         id: c.ejComCuriosidade.id,
         nome: "Júnior Consultoria",
@@ -201,6 +206,7 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
     const perfil = (await get(c.ana.token, c.leao.id)).json();
 
     expect(Object.keys(perfil).sort()).toEqual([
+      "capturado",
       "empresaJunior",
       "eventos",
       "federacao",
@@ -293,13 +299,26 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
     ).toEqual(["2027-06-01", "2027-04-01", "2027-03-01", "2027-02-01"]);
   });
 
-  it("o perfil é o mesmo para qualquer usuário autenticado", async () => {
+  it("o perfil é o mesmo para qualquer usuário autenticado, exceto o capturado", async () => {
     const c = await cenario(app);
 
-    const daAna = (await get(c.ana.token, c.leao.id)).json();
-    const daBia = (await get(c.bia.token, c.leao.id)).json();
+    const { capturado: daAnaCapturado, ...daAna } = (
+      await get(c.ana.token, c.leao.id)
+    ).json();
+    const { capturado: daBiaCapturado, ...daBia } = (
+      await get(c.bia.token, c.leao.id)
+    ).json();
+    const { capturado: doCaduCapturado, ...doCadu } = (
+      await get(c.cadu.token, c.leao.id)
+    ).json();
 
     expect(daBia).toEqual(daAna);
+    expect(doCadu).toEqual(daAna);
+    expect([daAnaCapturado, daBiaCapturado, doCaduCapturado]).toEqual([
+      true,
+      true,
+      false,
+    ]);
   });
 
   it("mascote recém-cadastrado já traz a captura do cadastrante (RN009) e curiosidades nula", async () => {
@@ -334,6 +353,9 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
     expect(
       resposta.json().eventos.map((e: { nome: string }) => e.nome),
     ).toEqual(["Evento Maio"]);
+    // O cadastrante já capturou o mascote (RN009); outro usuário ainda não.
+    expect(resposta.json().capturado).toBe(true);
+    expect((await get(c.bia.token, lobo.id)).json().capturado).toBe(false);
   });
 
   it("perfil de um mascote não mostra os eventos de outro", async () => {
@@ -344,5 +366,69 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
     expect(perfil.eventos.map((e: { nome: string }) => e.nome)).toEqual([
       "Evento Março",
     ]);
+  });
+
+  describe("RF007 — flag capturado (usuário logado)", () => {
+    const capturado = async (token: string, id: string) =>
+      (await get(token, id)).json().capturado as boolean;
+
+    it("true para quem já capturou o mascote", async () => {
+      const c = await cenario(app);
+
+      expect(await capturado(c.ana.token, c.leao.id)).toBe(true);
+      expect(await capturado(c.ana.token, c.tigre.id)).toBe(true);
+    });
+
+    it("false para quem nunca capturou, mesmo que outros usuários tenham capturado", async () => {
+      const c = await cenario(app);
+
+      // O Leão tem 3 capturas (de Ana e de Bia), mas nenhuma de Cadu.
+      const resposta = await get(c.cadu.token, c.leao.id);
+
+      expect(resposta.json().capturado).toBe(false);
+      expect(resposta.json().eventos).toHaveLength(2);
+    });
+
+    it("depende do mascote: Bia capturou o Leão, mas não o Tigre", async () => {
+      const c = await cenario(app);
+
+      expect(await capturado(c.bia.token, c.leao.id)).toBe(true);
+      expect(await capturado(c.bia.token, c.tigre.id)).toBe(false);
+    });
+
+    it("não altera a lista de eventos: continua com todos os eventos do mascote", async () => {
+      const c = await cenario(app);
+
+      const daBia = (await get(c.bia.token, c.leao.id)).json();
+      const doCadu = (await get(c.cadu.token, c.leao.id)).json();
+
+      // Bia só capturou em Janeiro, mas o perfil traz Maio e Janeiro.
+      expect(daBia.eventos.map((e: { nome: string }) => e.nome)).toEqual([
+        "Evento Maio",
+        "Evento Janeiro",
+      ]);
+      expect(doCadu.eventos).toEqual(daBia.eventos);
+    });
+
+    it("bate com o `capturado` da galeria para o mesmo usuário e mascote", async () => {
+      const c = await cenario(app);
+
+      for (const usuario of [c.ana, c.bia, c.cadu]) {
+        const galeria = await app.inject({
+          method: "GET",
+          url: "/mascotes",
+          headers: { authorization: `Bearer ${usuario.token}` },
+        });
+        const itens = galeria.json().data as {
+          id: string;
+          capturado: boolean;
+        }[];
+        expect(itens).toHaveLength(2);
+
+        for (const item of itens) {
+          expect(await capturado(usuario.token, item.id)).toBe(item.capturado);
+        }
+      }
+    });
   });
 });

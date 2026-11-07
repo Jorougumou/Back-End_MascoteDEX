@@ -37,9 +37,10 @@ export function createMascoteService({
     },
 
     // RF007, RN017, UC-07: perfil completo do mascote, com os eventos (e datas)
-    // em que foi capturado. FA01: mascote inexistente.
-    async buscarPerfil(id: string): Promise<MascotePerfil> {
-      const registro = await mascoteRepository.buscarPerfil(id);
+    // em que foi capturado e se o usuário logado já o capturou.
+    // FA01: mascote inexistente.
+    async buscarPerfil(id: string, usuarioId: string): Promise<MascotePerfil> {
+      const registro = await mascoteRepository.buscarPerfil(id, usuarioId);
 
       if (!registro) {
         throw new AppError(
@@ -55,6 +56,7 @@ export function createMascoteService({
         id: registro.id,
         nome: registro.nome,
         fotoUrl: registro.fotoUrl,
+        capturado: registro.capturado,
         empresaJunior,
         federacao,
         eventos: registro.eventos.map((evento) => ({

@@ -58,6 +58,8 @@ export const mascotePerfilSchema = z.object({
   id: z.uuid(),
   nome: z.string(),
   fotoUrl: z.string(),
+  // Mesma regra da galeria (RF005): o usuário logado já capturou este mascote.
+  capturado: z.boolean(),
   empresaJunior: z.object({
     id: z.uuid(),
     nome: z.string(),

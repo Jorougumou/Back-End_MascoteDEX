@@ -49,7 +49,7 @@ export const mascoteRoutes: FastifyPluginAsync<MascoteRoutesOptions> = async (
         tags: ["Mascotes"],
         summary: "Perfil detalhado do mascote",
         description:
-          "Retorna foto, nome, EJ (com universidade e curiosidades), federação/região e os eventos, com datas, em que o mascote foi capturado (mais recentes primeiro; cada evento aparece uma vez). Mascote inexistente retorna 404.",
+          "Retorna foto, nome, EJ (com universidade e curiosidades), federação/região e os eventos, com datas, em que o mascote foi capturado (mais recentes primeiro; cada evento aparece uma vez). O campo `capturado` indica se o usuário logado já capturou o mascote (mesma regra da galeria). Mascote inexistente retorna 404.",
         security: [{ bearerAuth: [] }],
         params: mascoteParamsSchema,
         response: {
@@ -61,6 +61,7 @@ export const mascoteRoutes: FastifyPluginAsync<MascoteRoutesOptions> = async (
         },
       },
     },
-    async (request) => mascoteService.buscarPerfil(request.params.id),
+    async (request) =>
+      mascoteService.buscarPerfil(request.params.id, request.user.sub),
   );
 };

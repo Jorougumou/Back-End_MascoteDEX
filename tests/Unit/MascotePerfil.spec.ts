@@ -18,6 +18,7 @@ function registro(
     id: crypto.randomUUID(),
     nome: "Leão",
     fotoUrl: "https://exemplo.com/leao.jpg",
+    capturado: false,
     empresaJunior: {
       id: crypto.randomUUID(),
       nome: "Júnior Consultoria",
@@ -36,30 +37,31 @@ function registro(
 }
 
 function criarRepositorioFalso(resultado: PerfilMascoteRegistro | null) {
-  const idsConsultados: string[] = [];
+  const consultas: { id: string; usuarioId: string }[] = [];
 
   const repository: MascoteRepository = {
     async listarGaleria() {
       return { itens: [], total: 0 };
     },
-    async buscarPerfil(id) {
-      idsConsultados.push(id);
+    async buscarPerfil(id, usuarioId) {
+      consultas.push({ id, usuarioId });
       return resultado;
     },
   };
 
-  return { repository, idsConsultados };
+  return { repository, consultas };
 }
 
 describe("RF007/RN017 — perfil do mascote no service", () => {
-  it("consulta o repositório com o id informado", async () => {
-    const { repository, idsConsultados } = criarRepositorioFalso(registro());
+  it("consulta o repositório com o id do mascote e o id do usuário logado", async () => {
+    const { repository, consultas } = criarRepositorioFalso(registro());
     const service = createMascoteService({ mascoteRepository: repository });
     const id = crypto.randomUUID();
+    const usuarioId = crypto.randomUUID();
 
-    await service.buscarPerfil(id);
+    await service.buscarPerfil(id, usuarioId);
 
-    expect(idsConsultados).toEqual([id]);
+    expect(consultas).toEqual([{ id, usuarioId }]);
   });
 
   it("UC-07 FA01: mascote inexistente lança NAO_ENCONTRADO (404)", async () => {
@@ -67,7 +69,7 @@ describe("RF007/RN017 — perfil do mascote no service", () => {
     const service = createMascoteService({ mascoteRepository: repository });
 
     const erro = await service
-      .buscarPerfil(crypto.randomUUID())
+      .buscarPerfil(crypto.randomUUID(), crypto.randomUUID())
       .catch((e: unknown) => e);
 
     expect(erro).toBeInstanceOf(AppError);
@@ -82,7 +84,7 @@ describe("RF007/RN017 — perfil do mascote no service", () => {
     const { repository } = criarRepositorioFalso(dados);
     const service = createMascoteService({ mascoteRepository: repository });
 
-    const perfil = await service.buscarPerfil(dados.id);
+    const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
 
     expect(perfil.federacao).toEqual({
       nome: "Federação SP",
@@ -121,7 +123,7 @@ describe("RF007/RN017 — perfil do mascote no service", () => {
     const { repository } = criarRepositorioFalso(dados);
     const service = createMascoteService({ mascoteRepository: repository });
 
-    const perfil = await service.buscarPerfil(dados.id);
+    const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
 
     expect(
       perfil.eventos.map((e) => [e.nome, e.dataInicio, e.dataFim]),
@@ -139,11 +141,48 @@ describe("RF007/RN017 — perfil do mascote no service", () => {
     const { repository } = criarRepositorioFalso(dados);
     const service = createMascoteService({ mascoteRepository: repository });
 
-    const perfil = await service.buscarPerfil(dados.id);
+    const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
 
     expect(perfil.eventos).toEqual([]);
     expect(perfil.empresaJunior.curiosidades).toBeNull();
     expect(mascotePerfilSchema.safeParse(perfil).success).toBe(true);
+  });
+});
+
+describe("RF007 — flag capturado no perfil (usuário logado)", () => {
+  it("devolve capturado: true quando o usuário logado já capturou o mascote", async () => {
+    const dados = registro({ capturado: true });
+    const { repository } = criarRepositorioFalso(dados);
+    const service = createMascoteService({ mascoteRepository: repository });
+
+    const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
+
+    expect(perfil.capturado).toBe(true);
+  });
+
+  it("devolve capturado: false quando o usuário logado ainda não capturou o mascote", async () => {
+    const dados = registro({ capturado: false });
+    const { repository } = criarRepositorioFalso(dados);
+    const service = createMascoteService({ mascoteRepository: repository });
+
+    const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
+
+    expect(perfil.capturado).toBe(false);
+  });
+
+  it("o schema da resposta exige capturado booleano", async () => {
+    const dados = registro({ capturado: true });
+    const { repository } = criarRepositorioFalso(dados);
+    const service = createMascoteService({ mascoteRepository: repository });
+    const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
+
+    expect(mascotePerfilSchema.safeParse(perfil).success).toBe(true);
+
+    const { capturado: _omitido, ...semCapturado } = perfil;
+    expect(mascotePerfilSchema.safeParse(semCapturado).success).toBe(false);
+    expect(
+      mascotePerfilSchema.safeParse({ ...perfil, capturado: "true" }).success,
+    ).toBe(false);
   });
 });
 
