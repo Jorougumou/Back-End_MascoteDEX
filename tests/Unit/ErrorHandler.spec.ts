@@ -86,3 +86,37 @@ describe("ErrorHandler — formato padrão de erro (D-13)", () => {
     expect(response.json().code).toBe("NAO_ENCONTRADO");
   });
 });
+
+describe("ErrorHandler — AppError 5xx (D-38)", () => {
+  it("loga a causa no servidor e não a expõe na resposta", async () => {
+    const linhas: string[] = [];
+    const app = Fastify({
+      logger: {
+        level: "error",
+        stream: { write: (linha: string) => void linhas.push(linha) },
+      },
+    });
+    app.setErrorHandler(errorHandler);
+    app.get("/storage", async () => {
+      throw new AppError(
+        "ERRO_STORAGE",
+        502,
+        "Falha ao enviar a imagem.",
+        null,
+        new Error("chave-secreta-do-supabase"),
+      );
+    });
+
+    const response = await app.inject({ method: "GET", url: "/storage" });
+
+    expect(response.statusCode).toBe(502);
+    expect(response.json()).toEqual({
+      statusCode: 502,
+      code: "ERRO_STORAGE",
+      message: "Falha ao enviar a imagem.",
+      details: null,
+    });
+    expect(response.body).not.toMatch(/chave-secreta/);
+    expect(linhas.join("")).toMatch(/chave-secreta-do-supabase/);
+  });
+});

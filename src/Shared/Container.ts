@@ -9,8 +9,15 @@ import { createFederacaoRepository } from "@/Modules/Federacoes/FederacaoReposit
 import { createFederacaoService } from "@/Modules/Federacoes/FederacaoService";
 import { createEmpresaJuniorRepository } from "@/Modules/EmpresasJuniores/EmpresaJuniorRepository";
 import { createEmpresaJuniorService } from "@/Modules/EmpresasJuniores/EmpresaJuniorService";
+import { env } from "@/Config/Env";
+import { createStorage } from "@/Infra/Storage/StorageFactory";
+import type { StorageProvider } from "@/Infra/Storage/StorageProvider";
 
-export function buildContainer() {
+export interface ContainerOverrides {
+  storage?: StorageProvider;
+}
+
+export function buildContainer(overrides: ContainerOverrides = {}) {
   const authRepository = createAuthRepository(prisma);
   const authService = createAuthService({ authRepository });
 
@@ -28,7 +35,10 @@ export function buildContainer() {
     empresaJuniorRepository,
   });
 
+  const storage = overrides.storage ?? createStorage(env);
+
   return {
+    storage,
     authService,
     mascoteService,
     eventoService,
