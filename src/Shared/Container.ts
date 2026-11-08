@@ -5,6 +5,10 @@ import { createMascoteRepository } from "@/Modules/Mascotes/MascoteRepository";
 import { createMascoteService } from "@/Modules/Mascotes/MascoteService";
 import { createEventoRepository } from "@/Modules/Eventos/EventoRepository";
 import { createEventoService } from "@/Modules/Eventos/EventoService";
+import { createFederacaoRepository } from "@/Modules/Federacoes/FederacaoRepository";
+import { createFederacaoService } from "@/Modules/Federacoes/FederacaoService";
+import { createEmpresaJuniorRepository } from "@/Modules/EmpresasJuniores/EmpresaJuniorRepository";
+import { createEmpresaJuniorService } from "@/Modules/EmpresasJuniores/EmpresaJuniorService";
 
 export function buildContainer() {
   const authRepository = createAuthRepository(prisma);
@@ -16,7 +20,21 @@ export function buildContainer() {
   const eventoRepository = createEventoRepository(prisma);
   const eventoService = createEventoService({ eventoRepository });
 
-  return { authService, mascoteService, eventoService };
+  const federacaoRepository = createFederacaoRepository(prisma);
+  const federacaoService = createFederacaoService({ federacaoRepository });
+
+  const empresaJuniorRepository = createEmpresaJuniorRepository(prisma);
+  const empresaJuniorService = createEmpresaJuniorService({
+    empresaJuniorRepository,
+  });
+
+  return {
+    authService,
+    mascoteService,
+    eventoService,
+    federacaoService,
+    empresaJuniorService,
+  };
 }
 
 export type Container = ReturnType<typeof buildContainer>;

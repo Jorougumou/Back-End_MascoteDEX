@@ -14,6 +14,8 @@ import { registerSecurity } from "@/Shared/Plugins/SecurityPlugin";
 import { registerSwagger } from "@/Shared/Plugins/SwaggerPlugin";
 import { registerMultipart } from "./Shared/Plugins/MultipartPlugin";
 import { eventoRoutes } from "./Modules/Eventos/EventoRoutes";
+import { federacaoRoutes } from "./Modules/Federacoes/FederacaoRoutes";
+import { empresaJuniorRoutes } from "./Modules/EmpresasJuniores/EmpresaJuniorRoutes";
 
 const DEFAULT_RATE_LIMIT_MAX = 100;
 
@@ -68,6 +70,13 @@ export function buildApp(overrides: AppOverrides = {}) {
 
   app.register(mascoteRoutes, { mascoteService: container.mascoteService });
   app.register(eventoRoutes, { eventoService: container.eventoService });
+
+  app.register(federacaoRoutes, {
+    federacaoService: container.federacaoService,
+  });
+  app.register(empresaJuniorRoutes, {
+    empresaJuniorService: container.empresaJuniorService,
+  });
 
   return app;
 }
