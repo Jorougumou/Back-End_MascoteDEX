@@ -7,7 +7,7 @@ import type { GaleriaQuery } from "@/Modules/Mascotes/MascoteSchemas";
 import {
   criarServicoDeLeitura,
   repositorioBase,
-} from "../Helpers/MascotesFakes";
+} from "../Helpers/MascoteFakes";
 
 function criarRepositorioFalso(total: number) {
   const chamadas: ListarGaleriaArgs[] = [];
