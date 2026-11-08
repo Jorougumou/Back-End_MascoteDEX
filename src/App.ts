@@ -61,7 +61,10 @@ export function buildApp(overrides: AppOverrides = {}) {
     expiresIn: env.JWT_EXPIRES_IN,
   });
 
-  const container = buildContainer({ storage: overrides.storage });
+  const container = buildContainer({
+    storage: overrides.storage,
+    logger: app.log,
+  });
 
   app.register(healthRoutes);
   app.register(authRoutes, {

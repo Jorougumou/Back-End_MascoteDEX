@@ -1,4 +1,6 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
+import { AppError } from "@/Shared/Errors/AppError";
+import { ErrorCodes } from "@/Shared/Errors/ErrorCodes";
 import type { MascoteGaleria } from "./MascoteSchemas";
 
 export interface FiltrosGaleria {
@@ -38,6 +40,36 @@ export interface PerfilMascoteRegistro {
   eventos: EventoDoMascoteRegistro[];
 }
 
+export interface EmpresaJuniorSugestao {
+  id: string;
+  nome: string;
+  universidade: string;
+  federacaoId: string;
+}
+
+export interface NovaEmpresaJuniorRegistro {
+  nome: string;
+  nomeNormalizado: string;
+  universidade: string;
+  curiosidades: string | null;
+  federacaoId: string;
+}
+
+export type EmpresaJuniorDoCadastro =
+  | { tipo: "existente"; id: string }
+  | { tipo: "nova"; dados: NovaEmpresaJuniorRegistro };
+
+export interface CadastrarComCapturaArgs {
+  empresaJunior: EmpresaJuniorDoCadastro;
+  mascote: {
+    nome: string;
+    nomeNormalizado: string;
+    fotoUrl: string;
+    usuarioId: string;
+  };
+  captura: { eventoId: string; capturadoEm: Date };
+}
+
 export interface MascoteRepository {
   listarGaleria(
     args: ListarGaleriaArgs,
@@ -46,9 +78,36 @@ export interface MascoteRepository {
     id: string,
     usuarioId: string,
   ): Promise<PerfilMascoteRegistro | null>;
+
+  eventoExiste(id: string): Promise<boolean>;
+  empresaJuniorExiste(id: string): Promise<boolean>;
+  federacaoExiste(id: string): Promise<boolean>;
+  buscarMascotePorNome(
+    empresaJuniorId: string,
+    nomeNormalizado: string,
+  ): Promise<{ id: string } | null>;
+  buscarEmpresaJuniorPorNome(
+    federacaoId: string,
+    nomeNormalizado: string,
+  ): Promise<{ id: string } | null>;
+  buscarEmpresasJunioresSimilares(
+    nomeNormalizado: string,
+    limite: number,
+  ): Promise<EmpresaJuniorSugestao[]>;
+  cadastrarComCaptura(
+    args: CadastrarComCapturaArgs,
+  ): Promise<{ mascoteId: string }>;
 }
 
-// RN013: filtros combinados com AND. Só entra no where o que foi informado.
+function violouUnicidade(erro: unknown): boolean {
+  return (
+    erro instanceof Prisma.PrismaClientKnownRequestError &&
+    erro.code === "P2002"
+  );
+}
+
+class MascoteDuplicadoNaTransacao extends Error {}
+
 export function montarWhereGaleria(
   usuarioId: string,
   filtros: FiltrosGaleria,
@@ -62,7 +121,6 @@ export function montarWhereGaleria(
     empresaJunior.federacao = { estado: filtros.estado };
   }
   if (filtros.empresaJuniorNormalizado) {
-    // nomeNormalizado já está sem acento e em minúsculas (busca parcial).
     empresaJunior.nomeNormalizado = {
       contains: filtros.empresaJuniorNormalizado,
     };
@@ -83,8 +141,19 @@ export function montarWhereGaleria(
 export function createMascoteRepository(
   prisma: PrismaClient,
 ): MascoteRepository {
+  function buscarMascotePorNome(
+    empresaJuniorId: string,
+    nomeNormalizado: string,
+  ) {
+    return prisma.mascote.findUnique({
+      where: {
+        empresaJuniorId_nomeNormalizado: { empresaJuniorId, nomeNormalizado },
+      },
+      select: { id: true },
+    });
+  }
+
   return {
-    // RF005, RF006, RNF009: uma única consulta com join (sem N+1).
     async listarGaleria({ usuarioId, skip, take, filtros }) {
       const where = montarWhereGaleria(usuarioId, filtros);
 
@@ -107,7 +176,6 @@ export function createMascoteRepository(
                 },
               },
             },
-            // Só as capturas do usuário logado; basta saber se existe uma.
             capturas: {
               where: { usuarioId },
               select: { id: true },
@@ -134,10 +202,6 @@ export function createMascoteRepository(
       return { itens, total };
     },
 
-    // RF007, RN017: dados do mascote, da EJ e da federação, mais os eventos
-    // em que ele foi capturado (cada evento aparece uma única vez).
-    // `capturado` indica se o usuário logado já capturou o mascote (como na
-    // galeria), sem consulta extra: vem junto da busca do mascote.
     async buscarPerfil(id, usuarioId) {
       const mascote = await prisma.mascote.findUnique({
         where: { id },
@@ -145,7 +209,6 @@ export function createMascoteRepository(
           id: true,
           nome: true,
           fotoUrl: true,
-          // Só as capturas do usuário logado; basta saber se existe uma.
           capturas: {
             where: { usuarioId },
             select: { id: true },
@@ -184,6 +247,131 @@ export function createMascoteRepository(
       const { capturas, ...dados } = mascote;
 
       return { ...dados, capturado: capturas.length > 0, eventos };
+    },
+
+    async eventoExiste(id) {
+      const evento = await prisma.evento.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+      return evento !== null;
+    },
+
+    async empresaJuniorExiste(id) {
+      const empresaJunior = await prisma.empresaJunior.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+      return empresaJunior !== null;
+    },
+
+    async federacaoExiste(id) {
+      const federacao = await prisma.federacao.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+      return federacao !== null;
+    },
+
+    buscarMascotePorNome,
+
+    buscarEmpresaJuniorPorNome(federacaoId, nomeNormalizado) {
+      return prisma.empresaJunior.findUnique({
+        where: {
+          federacaoId_nomeNormalizado: { federacaoId, nomeNormalizado },
+        },
+        select: { id: true },
+      });
+    },
+
+    buscarEmpresasJunioresSimilares(nomeNormalizado, limite) {
+      return prisma.empresaJunior.findMany({
+        where: { nomeNormalizado: { contains: nomeNormalizado } },
+        select: { id: true, nome: true, universidade: true, federacaoId: true },
+        orderBy: [{ nome: "asc" }, { id: "asc" }],
+        take: limite,
+      });
+    },
+
+    async cadastrarComCaptura({ empresaJunior, mascote, captura }) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          let empresaJuniorId: string;
+
+          if (empresaJunior.tipo === "existente") {
+            empresaJuniorId = empresaJunior.id;
+          } else {
+            try {
+              const criada = await tx.empresaJunior.create({
+                data: empresaJunior.dados,
+                select: { id: true },
+              });
+              empresaJuniorId = criada.id;
+            } catch (erro) {
+              if (violouUnicidade(erro)) {
+                throw new AppError(
+                  ErrorCodes.EJ_DUPLICADA,
+                  409,
+                  "Já existe uma empresa júnior com esse nome nesta federação.",
+                );
+              }
+              throw erro;
+            }
+          }
+
+          try {
+            const criado = await tx.mascote.create({
+              data: {
+                nome: mascote.nome,
+                nomeNormalizado: mascote.nomeNormalizado,
+                fotoUrl: mascote.fotoUrl,
+                empresaJuniorId,
+                usuarioId: mascote.usuarioId,
+                capturas: {
+                  create: {
+                    usuarioId: mascote.usuarioId,
+                    eventoId: captura.eventoId,
+                    fotoUrl: mascote.fotoUrl,
+                    capturadoEm: captura.capturadoEm,
+                  },
+                },
+              },
+              select: { id: true },
+            });
+            return { mascoteId: criado.id };
+          } catch (erro) {
+            if (violouUnicidade(erro)) throw new MascoteDuplicadoNaTransacao();
+            throw erro;
+          }
+        });
+      } catch (erro) {
+        if (erro instanceof MascoteDuplicadoNaTransacao) {
+          const existente =
+            empresaJunior.tipo === "existente"
+              ? await buscarMascotePorNome(
+                  empresaJunior.id,
+                  mascote.nomeNormalizado,
+                )
+              : null;
+          throw new AppError(
+            ErrorCodes.MASCOTE_JA_CADASTRADO,
+            409,
+            "Este mascote já está cadastrado nesta empresa júnior.",
+            existente ? { mascoteId: existente.id } : null,
+          );
+        }
+        if (
+          erro instanceof Prisma.PrismaClientKnownRequestError &&
+          erro.code === "P2003"
+        ) {
+          throw new AppError(
+            ErrorCodes.NAO_AUTENTICADO,
+            401,
+            "Usuário do token não encontrado.",
+          );
+        }
+        throw erro;
+      }
     },
   };
 }

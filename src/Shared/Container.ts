@@ -12,17 +12,26 @@ import { createEmpresaJuniorService } from "@/Modules/EmpresasJuniores/EmpresaJu
 import { env } from "@/Config/Env";
 import { createStorage } from "@/Infra/Storage/StorageFactory";
 import type { StorageProvider } from "@/Infra/Storage/StorageProvider";
+import { loggerNulo, type Logger } from "@/Shared/Utils/Logger";
 
 export interface ContainerOverrides {
   storage?: StorageProvider;
+  logger?: Logger;
 }
 
 export function buildContainer(overrides: ContainerOverrides = {}) {
   const authRepository = createAuthRepository(prisma);
   const authService = createAuthService({ authRepository });
 
+  const storage = overrides.storage ?? createStorage(env);
+  const logger = overrides.logger ?? loggerNulo;
+
   const mascoteRepository = createMascoteRepository(prisma);
-  const mascoteService = createMascoteService({ mascoteRepository });
+  const mascoteService = createMascoteService({
+    mascoteRepository,
+    storage,
+    logger,
+  });
 
   const eventoRepository = createEventoRepository(prisma);
   const eventoService = createEventoService({ eventoRepository });
@@ -34,8 +43,6 @@ export function buildContainer(overrides: ContainerOverrides = {}) {
   const empresaJuniorService = createEmpresaJuniorService({
     empresaJuniorRepository,
   });
-
-  const storage = overrides.storage ?? createStorage(env);
 
   return {
     storage,
