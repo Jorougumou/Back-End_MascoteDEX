@@ -6,11 +6,14 @@ import {
 import { env } from "@/Config/Env";
 import { authRoutes } from "@/Modules/Auth/AuthRoutes";
 import { healthRoutes } from "@/Modules/Health/HealthRoutes";
+import { mascoteRoutes } from "@/Modules/Mascotes/MascoteRoutes";
 import { errorHandler, notFoundHandler } from "@/Shared/Errors/ErrorHandler";
 import { buildContainer } from "@/Shared/Container";
 import { registerAuth } from "@/Shared/Plugins/AuthPlugin";
 import { registerSecurity } from "@/Shared/Plugins/SecurityPlugin";
 import { registerSwagger } from "@/Shared/Plugins/SwaggerPlugin";
+import { registerMultipart } from "./Shared/Plugins/MultipartPlugin";
+import { eventoRoutes } from "./Modules/Eventos/EventoRoutes";
 
 const DEFAULT_RATE_LIMIT_MAX = 100;
 
@@ -49,6 +52,7 @@ export function buildApp(overrides: AppOverrides = {}) {
     rateLimitMax: overrides.rateLimitMax ?? DEFAULT_RATE_LIMIT_MAX,
   });
   registerSwagger(app);
+  registerMultipart(app);
   registerAuth(app, {
     secret: env.JWT_SECRET,
     expiresIn: env.JWT_EXPIRES_IN,
@@ -61,6 +65,9 @@ export function buildApp(overrides: AppOverrides = {}) {
     authService: container.authService,
     authRateLimitMax: overrides.authRateLimitMax ?? env.RATE_LIMIT_AUTH_MAX,
   });
+
+  app.register(mascoteRoutes, { mascoteService: container.mascoteService });
+  app.register(eventoRoutes, { eventoService: container.eventoService });
 
   return app;
 }
