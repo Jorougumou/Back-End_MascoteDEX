@@ -4,6 +4,7 @@ import {
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import { env } from "@/Config/Env";
+import type { StorageProvider } from "@/Infra/Storage/StorageProvider";
 import { authRoutes } from "@/Modules/Auth/AuthRoutes";
 import { healthRoutes } from "@/Modules/Health/HealthRoutes";
 import { mascoteRoutes } from "@/Modules/Mascotes/MascoteRoutes";
@@ -19,8 +20,8 @@ import { empresaJuniorRoutes } from "./Modules/EmpresasJuniores/EmpresaJuniorRou
 
 const DEFAULT_RATE_LIMIT_MAX = 100;
 
-// Será estendido com { storage } para injetar um StorageProvider falso nos testes.
 export interface AppOverrides {
+  storage?: StorageProvider;
   rateLimitMax?: number;
   authRateLimitMax?: number;
 }
@@ -60,7 +61,7 @@ export function buildApp(overrides: AppOverrides = {}) {
     expiresIn: env.JWT_EXPIRES_IN,
   });
 
-  const container = buildContainer();
+  const container = buildContainer({ storage: overrides.storage });
 
   app.register(healthRoutes);
   app.register(authRoutes, {
@@ -70,7 +71,6 @@ export function buildApp(overrides: AppOverrides = {}) {
 
   app.register(mascoteRoutes, { mascoteService: container.mascoteService });
   app.register(eventoRoutes, { eventoService: container.eventoService });
-
   app.register(federacaoRoutes, {
     federacaoService: container.federacaoService,
   });
