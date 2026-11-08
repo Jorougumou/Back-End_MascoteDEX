@@ -4,12 +4,16 @@ import type {
   MascoteRepository,
 } from "@/Modules/Mascotes/MascoteRepository";
 import type { GaleriaQuery } from "@/Modules/Mascotes/MascoteSchemas";
-import { createMascoteService } from "@/Modules/Mascotes/MascoteService";
+import {
+  criarServicoDeLeitura,
+  repositorioBase,
+} from "../Helpers/MascotesFakes";
 
 function criarRepositorioFalso(total: number) {
   const chamadas: ListarGaleriaArgs[] = [];
 
   const repository: MascoteRepository = {
+    ...repositorioBase(),
     async listarGaleria(args) {
       chamadas.push(args);
       return { itens: [], total };
@@ -29,7 +33,7 @@ function consulta(parcial: Partial<GaleriaQuery> = {}): GaleriaQuery {
 describe("RF005 — galeria de mascotes", () => {
   it("converte page/limit em skip/take e repassa o usuário logado", async () => {
     const { repository, chamadas } = criarRepositorioFalso(45);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     await service.listarGaleria("usuario-1", consulta({ page: 3, limit: 20 }));
 
@@ -42,7 +46,7 @@ describe("RF005 — galeria de mascotes", () => {
 
   it("calcula os metadados de paginação", async () => {
     const { repository } = criarRepositorioFalso(45);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     const resposta = await service.listarGaleria("usuario-1", consulta());
 
@@ -56,7 +60,7 @@ describe("RF005 — galeria de mascotes", () => {
 
   it("galeria vazia devolve lista vazia e total 0", async () => {
     const { repository } = criarRepositorioFalso(0);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     const resposta = await service.listarGaleria("usuario-1", consulta());
 
@@ -69,7 +73,7 @@ describe("RF005 — galeria de mascotes", () => {
 describe("RF006/RN013 — filtros da galeria no service", () => {
   it("sem filtros, repassa filtros vazios e minhaColecao desligada", async () => {
     const { repository, chamadas } = criarRepositorioFalso(0);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     await service.listarGaleria("usuario-1", consulta());
 
@@ -83,7 +87,7 @@ describe("RF006/RN013 — filtros da galeria no service", () => {
 
   it("normaliza o nome da EJ (sem acento, sem caixa, espaços colapsados)", async () => {
     const { repository, chamadas } = criarRepositorioFalso(0);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     await service.listarGaleria(
       "usuario-1",
@@ -95,7 +99,7 @@ describe("RF006/RN013 — filtros da galeria no service", () => {
 
   it("repassa estado, federação e minhaColecao combinados", async () => {
     const { repository, chamadas } = criarRepositorioFalso(0);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
     const federacaoId = crypto.randomUUID();
 
     await service.listarGaleria(

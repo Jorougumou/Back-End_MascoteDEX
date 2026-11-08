@@ -9,7 +9,10 @@ import {
   mascoteParamsSchema,
   mascotePerfilSchema,
 } from "@/Modules/Mascotes/MascoteSchemas";
-import { createMascoteService } from "@/Modules/Mascotes/MascoteService";
+import {
+  criarServicoDeLeitura,
+  repositorioBase,
+} from "../Helpers/MascotesFakes";
 
 function registro(
   parcial: Partial<PerfilMascoteRegistro> = {},
@@ -40,6 +43,7 @@ function criarRepositorioFalso(resultado: PerfilMascoteRegistro | null) {
   const consultas: { id: string; usuarioId: string }[] = [];
 
   const repository: MascoteRepository = {
+    ...repositorioBase(),
     async listarGaleria() {
       return { itens: [], total: 0 };
     },
@@ -55,7 +59,7 @@ function criarRepositorioFalso(resultado: PerfilMascoteRegistro | null) {
 describe("RF007/RN017 — perfil do mascote no service", () => {
   it("consulta o repositório com o id do mascote e o id do usuário logado", async () => {
     const { repository, consultas } = criarRepositorioFalso(registro());
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
     const id = crypto.randomUUID();
     const usuarioId = crypto.randomUUID();
 
@@ -66,7 +70,7 @@ describe("RF007/RN017 — perfil do mascote no service", () => {
 
   it("UC-07 FA01: mascote inexistente lança NAO_ENCONTRADO (404)", async () => {
     const { repository } = criarRepositorioFalso(null);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     const erro = await service
       .buscarPerfil(crypto.randomUUID(), crypto.randomUUID())
@@ -82,7 +86,7 @@ describe("RF007/RN017 — perfil do mascote no service", () => {
   it("monta o perfil com a federação no nível do mascote", async () => {
     const dados = registro();
     const { repository } = criarRepositorioFalso(dados);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
 
@@ -121,7 +125,7 @@ describe("RF007/RN017 — perfil do mascote no service", () => {
       ],
     });
     const { repository } = criarRepositorioFalso(dados);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
 
@@ -139,7 +143,7 @@ describe("RF007/RN017 — perfil do mascote no service", () => {
     const dados = registro();
     dados.empresaJunior.curiosidades = null;
     const { repository } = criarRepositorioFalso(dados);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
 
@@ -153,7 +157,7 @@ describe("RF007 — flag capturado no perfil (usuário logado)", () => {
   it("devolve capturado: true quando o usuário logado já capturou o mascote", async () => {
     const dados = registro({ capturado: true });
     const { repository } = criarRepositorioFalso(dados);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
 
@@ -163,7 +167,7 @@ describe("RF007 — flag capturado no perfil (usuário logado)", () => {
   it("devolve capturado: false quando o usuário logado ainda não capturou o mascote", async () => {
     const dados = registro({ capturado: false });
     const { repository } = criarRepositorioFalso(dados);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
 
     const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
 
@@ -173,7 +177,7 @@ describe("RF007 — flag capturado no perfil (usuário logado)", () => {
   it("o schema da resposta exige capturado booleano", async () => {
     const dados = registro({ capturado: true });
     const { repository } = criarRepositorioFalso(dados);
-    const service = createMascoteService({ mascoteRepository: repository });
+    const service = criarServicoDeLeitura(repository);
     const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
 
     expect(mascotePerfilSchema.safeParse(perfil).success).toBe(true);
