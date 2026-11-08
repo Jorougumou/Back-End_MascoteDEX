@@ -36,6 +36,9 @@ export function errorHandler(
   reply: FastifyReply,
 ) {
   if (error instanceof AppError) {
+    if (error.statusCode >= 500) {
+      request.log.error({ err: error, causa: error.cause }, error.message);
+    }
     return reply
       .status(error.statusCode)
       .send(

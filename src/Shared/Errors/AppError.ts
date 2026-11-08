@@ -10,8 +10,9 @@ export class AppError extends Error {
     statusCode: number,
     message: string,
     details: unknown = null,
+    cause?: unknown,
   ) {
-    super(message);
+    super(message, cause === undefined ? undefined : { cause });
     this.name = "AppError";
     this.code = code;
     this.statusCode = statusCode;
