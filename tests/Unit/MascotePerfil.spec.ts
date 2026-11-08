@@ -12,7 +12,7 @@ import {
 import {
   criarServicoDeLeitura,
   repositorioBase,
-} from "../Helpers/MascotesFakes";
+} from "../Helpers/MascoteFakes";
 
 function registro(
   parcial: Partial<PerfilMascoteRegistro> = {},
