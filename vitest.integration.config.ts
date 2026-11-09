@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     name: "integration",
-    include: ["tests/Integration/**/*.int.spec.ts"],
+    include: ["tests/Integration/*.int.spec.ts"],
 
     environment: "node",
     env: { NODE_ENV: "test" },
