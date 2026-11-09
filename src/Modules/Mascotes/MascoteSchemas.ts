@@ -102,7 +102,6 @@ export const cadastrarMascoteCamposSchema = z
     ejUniversidade: textoLimpo(2, 160).optional(),
     ejFederacaoId: z.uuid().optional(),
     ejCuriosidades: textoLimpo(1, 1000).optional(),
-    // Multipart só envia texto; o enum evita que "false" vire true.
     confirmarNovaEj: z
       .enum(["true", "false"])
       .transform((valor) => valor === "true")
@@ -119,6 +118,7 @@ export const cadastrarMascoteCamposSchema = z
       empresaJunior: EmpresaJuniorEscolhida;
     } => {
       const { ejNome, ejUniversidade, ejFederacaoId, ejCuriosidades } = campos;
+
       const informouNova = [
         ejNome,
         ejUniversidade,
@@ -148,9 +148,13 @@ export const cadastrarMascoteCamposSchema = z
           );
           return z.NEVER;
         }
+
         return {
           ...base,
-          empresaJunior: { tipo: "existente", id: campos.empresaJuniorId },
+          empresaJunior: {
+            tipo: "existente",
+            id: campos.empresaJuniorId,
+          },
         };
       }
 
@@ -177,11 +181,13 @@ export const cadastrarMascoteCamposSchema = z
       }
 
       const obrigatorios = { ejNome, ejUniversidade, ejFederacaoId };
+
       for (const [campo, valor] of Object.entries(obrigatorios)) {
         if (valor === undefined) {
           rejeitar(campo, "obrigatório quando a EJ é nova");
         }
       }
+
       return z.NEVER;
     },
   );
@@ -193,7 +199,9 @@ export const cadastrarMascoteBodyDocSchema = z.object({
   capturadoEm: z
     .string()
     .optional()
-    .describe("ISO 8601 UTC. Padrão: agora. No modo offline, o original."),
+    .describe(
+      "ISO 8601 com offset. Padrão: agora. Na sincronização offline, envie o horário original da captura.",
+    ),
   empresaJuniorId: z
     .uuid()
     .optional()

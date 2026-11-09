@@ -34,7 +34,7 @@ export const capturaRoutes: FastifyPluginAsync<CapturaRoutesOptions> = async (
         tags: ["Capturas"],
         summary: "Registra uma captura de mascote em um evento",
         description:
-          "`multipart/form-data`: `foto` (JPEG/PNG/WebP até 10 MB), `eventoId` e `capturadoEm?` (ISO 8601 com offset; padrão: horário atual). A unicidade é por usuário, mascote e evento (RN010). Reenvio retorna 409 CAPTURA_DUPLICADA sem novo upload. A foto é removida se a gravação falhar (RN015).",
+          "`multipart/form-data`: `foto` (JPEG/PNG/WebP até 10 MB), `eventoId` e `capturadoEm?` (ISO 8601 com offset; padrão: horário atual; preserva o horário original da captura offline e rejeita datas mais de 5 minutos no futuro). A unicidade é por usuário, mascote e evento (RN010). Reenvio retorna 409 CAPTURA_DUPLICADA sem novo upload; durante sincronização offline, o cliente deve tratar esse código como já sincronizado e remover o item da fila (RN014). A foto é removida se a gravação falhar (RN015).",
         security: [{ bearerAuth: [] }],
         consumes: ["multipart/form-data"],
         params: capturaParamsSchema,

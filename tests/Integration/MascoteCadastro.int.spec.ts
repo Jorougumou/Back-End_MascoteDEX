@@ -1,4 +1,3 @@
-
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/Infra/Database/Prisma";
 import type { StorageProvider } from "@/Infra/Storage/StorageProvider";
@@ -185,9 +184,7 @@ describe("POST /mascotes — cadastro e primeira captura (T-16)", () => {
       mime: "image/jpeg",
     });
 
-    expect(storage.uploads[0]?.path).toMatch(
-      /^mascotes\/[0-9a-f-]+\.jpg$/,
-    );
+    expect(storage.uploads[0]?.path).toMatch(/^mascotes\/[0-9a-f-]+\.jpg$/);
 
     expect(storage.removals).toEqual([]);
 
@@ -278,10 +275,7 @@ describe("POST /mascotes — cadastro e primeira captura (T-16)", () => {
 
     const semFoto = await post(campos, null);
 
-    const fotoInvalida = await post(
-      campos,
-      Buffer.from("não é uma imagem"),
-    );
+    const fotoInvalida = await post(campos, Buffer.from("não é uma imagem"));
 
     expect(semFoto.statusCode).toBe(400);
     expect(semFoto.json().code).toBe("FOTO_INVALIDA");
@@ -445,11 +439,56 @@ describe("POST /mascotes — cadastro e primeira captura (T-16)", () => {
 
     expect(storage.uploads).toHaveLength(1);
 
-    expect(storage.removals).toEqual([
-      storage.uploads[0]?.url,
-    ]);
+    expect(storage.removals).toEqual([storage.uploads[0]?.url]);
 
     expect(await prisma.mascote.count()).toBe(0);
     expect(await prisma.captura.count()).toBe(0);
+  });
+
+  it("400 rejeita capturadoEm mais de 5 minutos no futuro antes do upload (T-18)", async () => {
+    const ej = await criarEmpresaJunior(federacaoId);
+
+    const capturadoEm = new Date(Date.now() + 6 * 60 * 1000).toISOString();
+
+    const resposta = await post({
+      nome: "Leão Futuro",
+      eventoId,
+      empresaJuniorId: ej.id,
+      capturadoEm,
+    });
+
+    expect(resposta.statusCode).toBe(400);
+    expect(resposta.json().code).toBe("VALIDATION_ERROR");
+
+    expect(storage.uploads).toHaveLength(0);
+    expect(await prisma.mascote.count()).toBe(0);
+    expect(await prisma.captura.count()).toBe(0);
+  });
+
+  it("409 MASCOTE_JA_CADASTRADO no retry offline com EJ criada na primeira tentativa (RN014)", async () => {
+    const campos = {
+      nome: "Raposa Offline",
+      eventoId,
+      ejNome: "Empresa Junior Offline",
+      ejUniversidade: "UFC",
+      ejFederacaoId: federacaoId,
+    };
+
+    const primeira = await post(campos);
+    const segunda = await post(campos);
+
+    expect(primeira.statusCode).toBe(201);
+    expect(segunda.statusCode).toBe(409);
+
+    expect(segunda.json()).toMatchObject({
+      code: "MASCOTE_JA_CADASTRADO",
+      details: {
+        mascoteId: primeira.json().id,
+      },
+    });
+
+    expect(storage.uploads).toHaveLength(1);
+    expect(await prisma.empresaJunior.count()).toBe(1);
+    expect(await prisma.mascote.count()).toBe(1);
   });
 });
