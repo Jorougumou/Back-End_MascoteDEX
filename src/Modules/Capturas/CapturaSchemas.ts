@@ -18,7 +18,9 @@ export const criarCapturaBodyDocSchema = z.object({
   capturadoEm: z
     .string()
     .optional()
-    .describe("Data/hora ISO 8601 com offset; padrão: agora."),
+    .describe(
+      "Data/hora ISO 8601 com offset; padrão: agora. Em sincronização offline, envie o horário original da captura.",
+    ),
 });
 
 export const capturaSchema = z.object({

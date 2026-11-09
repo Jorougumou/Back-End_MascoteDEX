@@ -6,10 +6,9 @@ import {
   validarImagem,
 } from "@/Shared/Utils/ImageValidation";
 import type { Logger } from "@/Shared/Utils/Logger";
+import { resolverDataCaptura } from "@/Shared/Utils/CapturadoEm";
 import type { CriarCapturaCampos, Captura } from "./CapturaSchemas";
 import type { CapturaRepository } from "./CapturaRepository";
-
-const TOLERANCIA_RELOGIO_MS = 5 * 60 * 1000;
 
 interface CapturaServiceDeps {
   capturaRepository: CapturaRepository;
@@ -81,26 +80,7 @@ export function createCapturaService({
         );
       }
 
-      const momentoAtual = agora();
-      const capturadoEm = dados.capturadoEm ?? momentoAtual;
-
-      if (
-        capturadoEm.getTime() >
-        momentoAtual.getTime() + TOLERANCIA_RELOGIO_MS
-      ) {
-        throw new AppError(
-          ErrorCodes.VALIDATION_ERROR,
-          400,
-          "capturadoEm não pode estar mais de 5 minutos no futuro.",
-          [
-            {
-              local: "body",
-              campo: "capturadoEm",
-              mensagem: "data futura",
-            },
-          ],
-        );
-      }
+      const capturadoEm = resolverDataCaptura(dados.capturadoEm, agora());
 
       const caminho = `capturas/${dados.eventoId}/${gerarNomeArquivo(
         imagem.extensao,

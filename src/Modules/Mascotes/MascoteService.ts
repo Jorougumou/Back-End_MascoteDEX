@@ -7,6 +7,7 @@ import {
 } from "@/Shared/Utils/ImageValidation";
 import type { Logger } from "@/Shared/Utils/Logger";
 import { normalizarTexto } from "@/Shared/Utils/Normalize";
+import { resolverDataCaptura } from "@/Shared/Utils/CapturadoEm";
 import { buildPaginationMeta, toSkipTake } from "@/Shared/Utils/Pagination";
 import type {
   EmpresaJuniorDoCadastro,
@@ -90,6 +91,7 @@ export function createMascoteService({
         escolhida.id,
         nomeMascoteNormalizado,
       );
+
       if (existente) {
         throw new AppError(
           ErrorCodes.MASCOTE_JA_CADASTRADO,
@@ -116,7 +118,22 @@ export function createMascoteService({
       escolhida.federacaoId,
       nomeEjNormalizado,
     );
+
     if (duplicada) {
+      const mascoteExistente = await mascoteRepository.buscarMascotePorNome(
+        duplicada.id,
+        nomeMascoteNormalizado,
+      );
+
+      if (mascoteExistente) {
+        throw new AppError(
+          ErrorCodes.MASCOTE_JA_CADASTRADO,
+          409,
+          "Este mascote já está cadastrado nesta empresa júnior.",
+          { mascoteId: mascoteExistente.id },
+        );
+      }
+
       throw new AppError(
         ErrorCodes.EJ_DUPLICADA,
         409,
@@ -130,6 +147,7 @@ export function createMascoteService({
         nomeEjNormalizado,
         LIMITE_SUGESTOES,
       );
+
       if (sugestoes.length > 0) {
         throw new AppError(
           ErrorCodes.EJ_SIMILARES_ENCONTRADAS,
@@ -181,7 +199,10 @@ export function createMascoteService({
         },
       });
 
-      return { data: itens, meta: buildPaginationMeta(page, limit, total) };
+      return {
+        data: itens,
+        meta: buildPaginationMeta(page, limit, total),
+      };
     },
 
     buscarPerfil,
@@ -192,6 +213,7 @@ export function createMascoteService({
       dados,
     }: CadastrarMascoteEntrada): Promise<MascotePerfil> {
       const imagem = validarImagem(foto);
+      const capturadoEm = resolverDataCaptura(dados.capturadoEm, agora());
 
       if (!(await mascoteRepository.eventoExiste(dados.eventoId))) {
         throw new AppError(
@@ -211,6 +233,7 @@ export function createMascoteService({
       const fotoUrl = await storage.upload(foto, imagem.mime, caminho);
 
       let mascoteId: string;
+
       try {
         ({ mascoteId } = await mascoteRepository.cadastrarComCaptura({
           empresaJunior,
@@ -222,7 +245,7 @@ export function createMascoteService({
           },
           captura: {
             eventoId: dados.eventoId,
-            capturadoEm: dados.capturadoEm ?? agora(),
+            capturadoEm,
           },
         }));
       } catch (erro) {
