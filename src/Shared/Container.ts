@@ -13,6 +13,8 @@ import { env } from "@/Config/Env";
 import { createStorage } from "@/Infra/Storage/StorageFactory";
 import type { StorageProvider } from "@/Infra/Storage/StorageProvider";
 import { loggerNulo, type Logger } from "@/Shared/Utils/Logger";
+import { createCapturaRepository } from "@/Modules/Capturas/CapturaRepository";
+import { createCapturaService } from "@/Modules/Capturas/CapturaService";
 
 export interface ContainerOverrides {
   storage?: StorageProvider;
@@ -44,6 +46,14 @@ export function buildContainer(overrides: ContainerOverrides = {}) {
     empresaJuniorRepository,
   });
 
+  const capturaRepository = createCapturaRepository(prisma);
+
+  const capturaService = createCapturaService({
+    capturaRepository,
+    storage,
+    logger,
+  });
+
   return {
     storage,
     authService,
@@ -51,6 +61,7 @@ export function buildContainer(overrides: ContainerOverrides = {}) {
     eventoService,
     federacaoService,
     empresaJuniorService,
+    capturaService,
   };
 }
 

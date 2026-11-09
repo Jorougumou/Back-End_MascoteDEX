@@ -17,6 +17,7 @@ import { registerMultipart } from "./Shared/Plugins/MultipartPlugin";
 import { eventoRoutes } from "./Modules/Eventos/EventoRoutes";
 import { federacaoRoutes } from "./Modules/Federacoes/FederacaoRoutes";
 import { empresaJuniorRoutes } from "./Modules/EmpresasJuniores/EmpresaJuniorRoutes";
+import { capturaRoutes } from "@/Modules/Capturas/CapturaRoutes";
 
 const DEFAULT_RATE_LIMIT_MAX = 100;
 
@@ -79,6 +80,10 @@ export function buildApp(overrides: AppOverrides = {}) {
   });
   app.register(empresaJuniorRoutes, {
     empresaJuniorService: container.empresaJuniorService,
+  });
+
+  app.register(capturaRoutes, {
+    capturaService: container.capturaService,
   });
 
   return app;
