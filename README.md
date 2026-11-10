@@ -212,7 +212,7 @@ npm run test:watch
 ## Rotas da API & Documentação
 
 Com a aplicação rodando, acesse a documentação interativa Swagger em:
-**`http://localhost:3333/docs`**
+**`http://localhost:3333/docs`** ou **`back-endmascotedex-production.up.railway.app/docs`**
 
 ### Resumo dos Principais Endpoints:
 
