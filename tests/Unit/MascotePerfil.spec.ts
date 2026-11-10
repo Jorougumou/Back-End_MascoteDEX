@@ -22,6 +22,7 @@ function registro(
     nome: "Leão",
     fotoUrl: "https://exemplo.com/leao.jpg",
     capturado: false,
+    capturadoEm: null,
     empresaJunior: {
       id: crypto.randomUUID(),
       nome: "Júnior Consultoria",
@@ -155,7 +156,10 @@ describe("RF007/RN017 — perfil do mascote no service", () => {
 
 describe("RF007 — flag capturado no perfil (usuário logado)", () => {
   it("devolve capturado: true quando o usuário logado já capturou o mascote", async () => {
-    const dados = registro({ capturado: true });
+    const dados = registro({
+      capturado: true,
+      capturadoEm: new Date("2026-05-20T15:30:00.000Z"),
+    });
     const { repository } = criarRepositorioFalso(dados);
     const service = criarServicoDeLeitura(repository);
 
@@ -187,6 +191,53 @@ describe("RF007 — flag capturado no perfil (usuário logado)", () => {
     expect(
       mascotePerfilSchema.safeParse({ ...perfil, capturado: "true" }).success,
     ).toBe(false);
+  });
+});
+
+describe("RF007 — capturadoEm no perfil (data da captura do usuário logado)", () => {
+  it("devolve a data/hora da captura em ISO 8601 (UTC)", async () => {
+    const dados = registro({
+      capturado: true,
+      capturadoEm: new Date("2026-05-20T15:30:00.000Z"),
+    });
+    const { repository } = criarRepositorioFalso(dados);
+    const service = criarServicoDeLeitura(repository);
+
+    const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
+
+    expect(perfil.capturadoEm).toBe("2026-05-20T15:30:00.000Z");
+    expect(mascotePerfilSchema.safeParse(perfil).success).toBe(true);
+  });
+
+  it("devolve capturadoEm: null quando o usuário logado ainda não capturou o mascote", async () => {
+    const dados = registro({ capturado: false, capturadoEm: null });
+    const { repository } = criarRepositorioFalso(dados);
+    const service = criarServicoDeLeitura(repository);
+
+    const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
+
+    expect(perfil.capturadoEm).toBeNull();
+    expect(mascotePerfilSchema.safeParse(perfil).success).toBe(true);
+  });
+
+  it("o schema da resposta exige capturadoEm (data ISO ou null)", async () => {
+    const dados = registro({
+      capturado: true,
+      capturadoEm: new Date("2026-05-20T15:30:00.000Z"),
+    });
+    const { repository } = criarRepositorioFalso(dados);
+    const service = criarServicoDeLeitura(repository);
+    const perfil = await service.buscarPerfil(dados.id, crypto.randomUUID());
+
+    const { capturadoEm: _omitido, ...semCapturadoEm } = perfil;
+    expect(mascotePerfilSchema.safeParse(semCapturadoEm).success).toBe(false);
+    expect(
+      mascotePerfilSchema.safeParse({ ...perfil, capturadoEm: "ontem" })
+        .success,
+    ).toBe(false);
+    expect(
+      mascotePerfilSchema.safeParse({ ...perfil, capturadoEm: null }).success,
+    ).toBe(true);
   });
 });
 

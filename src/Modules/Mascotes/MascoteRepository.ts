@@ -30,6 +30,7 @@ export interface PerfilMascoteRegistro {
   nome: string;
   fotoUrl: string;
   capturado: boolean;
+  capturadoEm: Date | null;
   empresaJunior: {
     id: string;
     nome: string;
@@ -209,9 +210,12 @@ export function createMascoteRepository(
           id: true,
           nome: true,
           fotoUrl: true,
+          // Só a primeira captura do usuário logado: diz se ele já capturou o
+          // mascote e quando (o usuário pode capturar em vários eventos, RN010).
           capturas: {
             where: { usuarioId },
-            select: { id: true },
+            orderBy: { capturadoEm: "asc" },
+            select: { capturadoEm: true },
             take: 1,
           },
           empresaJunior: {
@@ -245,8 +249,14 @@ export function createMascoteRepository(
       });
 
       const { capturas, ...dados } = mascote;
+      const primeiraCaptura = capturas.at(0);
 
-      return { ...dados, capturado: capturas.length > 0, eventos };
+      return {
+        ...dados,
+        capturado: primeiraCaptura !== undefined,
+        capturadoEm: primeiraCaptura?.capturadoEm ?? null,
+        eventos,
+      };
     },
 
     async eventoExiste(id) {

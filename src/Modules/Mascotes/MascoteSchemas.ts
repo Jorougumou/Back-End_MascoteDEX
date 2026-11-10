@@ -57,6 +57,13 @@ export const mascotePerfilSchema = z.object({
   nome: z.string(),
   fotoUrl: z.string(),
   capturado: z.boolean(),
+  capturadoEm: z
+    .string()
+    .datetime({ offset: true })
+    .nullable()
+    .describe(
+      "Data/hora (UTC) da primeira captura do usuário logado; null se ele ainda não capturou.",
+    ),
   empresaJunior: z.object({
     id: z.uuid(),
     nome: z.string(),
