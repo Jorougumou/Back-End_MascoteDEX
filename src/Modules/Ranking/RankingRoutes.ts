@@ -3,10 +3,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { authenticate } from "@/Shared/Plugins/AuthPlugin";
 import { ErrorResponseSchema } from "@/Shared/Schemas/Common";
 import type { RankingService } from "./RankingService";
-import {
-  getRankingQuerySchema,
-  getRankingResponseSchema,
-} from "./RankingSchemas";
+import { rankingQuerySchema, rankingResponseSchema } from "./RankingSchemas";
 
 interface RankingRoutesOptions {
   rankingService: RankingService;
@@ -22,23 +19,26 @@ export const rankingRoutes: FastifyPluginAsync<RankingRoutesOptions> = async (
       preHandler: authenticate,
       schema: {
         tags: ["Ranking"],
-        summary: "Exibe o ranking geral ou por evento",
+        summary: "Ranking geral ou por evento (paginado)",
+        description:
+          "Total = mascotes **distintos** capturados pelo usuário (RN012). Ordem: total decrescente; desempate pela última captura mais antiga. `me` traz a posição do usuário logado, independente da página (ou `null` se ele não tem capturas no escopo).",
         security: [{ bearerAuth: [] }],
-        querystring: getRankingQuerySchema,
+        querystring: rankingQuerySchema,
         response: {
-          200: getRankingResponseSchema,
+          200: rankingResponseSchema,
           400: ErrorResponseSchema,
           401: ErrorResponseSchema,
+          404: ErrorResponseSchema,
           429: ErrorResponseSchema,
         },
       },
     },
-    async (request, reply) => {
-      const { eventoId } = request.query;
-      const usuarioLogadoId = request.user.sub;
-
-      const result = await rankingService.execute(usuarioLogadoId, eventoId);
-      return reply.status(200).send(result);
-    },
+    async (request) =>
+      rankingService.listar({
+        usuarioLogadoId: request.user.sub,
+        eventoId: request.query.eventoId,
+        page: request.query.page,
+        limit: request.query.limit,
+      }),
   );
 };

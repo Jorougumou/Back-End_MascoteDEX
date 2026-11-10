@@ -16,8 +16,8 @@ import { loggerNulo, type Logger } from "@/Shared/Utils/Logger";
 import { createCapturaRepository } from "@/Modules/Capturas/CapturaRepository";
 import { createCapturaService } from "@/Modules/Capturas/CapturaService";
 
-import { RankingRepository } from "@/Modules/Ranking/RankingRepository";
-import { RankingService } from "@/Modules/Ranking/RankingService";
+import { createRankingRepository } from "@/Modules/Ranking/RankingRepository";
+import { createRankingService } from "@/Modules/Ranking/RankingService";
 
 export interface ContainerOverrides {
   storage?: StorageProvider;
@@ -57,8 +57,8 @@ export function buildContainer(overrides: ContainerOverrides = {}) {
     logger,
   });
 
-  const rankingRepository = new RankingRepository(prisma);
-  const rankingService = new RankingService(rankingRepository);
+  const rankingRepository = createRankingRepository(prisma);
+  const rankingService = createRankingService({ rankingRepository });
 
   return {
     storage,
@@ -73,6 +73,3 @@ export function buildContainer(overrides: ContainerOverrides = {}) {
 }
 
 export type Container = ReturnType<typeof buildContainer>;
-
-export const rankingRepository = new RankingRepository(prisma);
-export const rankingService = new RankingService(rankingRepository);

@@ -1,21 +1,37 @@
 import { z } from "zod";
+import {
+  paginatedResponseSchema,
+  paginationQuerySchema,
+} from "@/Shared/Schemas/Common";
 
-export const getRankingQuerySchema = z.object({
-  eventoId: z.string().uuid().optional(),
+export const rankingQuerySchema = paginationQuerySchema.extend({
+  eventoId: z
+    .uuid()
+    .optional()
+    .describe("Se informado, ranking só das capturas deste evento."),
 });
 
 export const rankingItemSchema = z.object({
-  posicao: z.number().int().positive(),
-  usuarioId: z.string().uuid(),
+  posicao: z.number().int(),
+  usuarioId: z.uuid(),
   nome: z.string(),
-  totalMascotes: z.number().int().nonnegative(),
-  ultimaCapturaEm: z.date(),
+  total: z.number().int(),
 });
 
-export const getRankingResponseSchema = z.object({
-  ranking: z.array(rankingItemSchema),
-  me: rankingItemSchema.nullable(),
+export const rankingMeSchema = z
+  .object({
+    posicao: z.number().int(),
+    total: z.number().int(),
+  })
+  .nullable();
+
+export const rankingResponseSchema = paginatedResponseSchema(
+  rankingItemSchema,
+).extend({
+  me: rankingMeSchema,
 });
 
-export type GetRankingQuery = z.infer<typeof getRankingQuerySchema>;
-export type GetRankingResponse = z.infer<typeof getRankingResponseSchema>;
+export type RankingQuery = z.infer<typeof rankingQuerySchema>;
+export type RankingItem = z.infer<typeof rankingItemSchema>;
+export type RankingMe = z.infer<typeof rankingMeSchema>;
+export type RankingResponse = z.infer<typeof rankingResponseSchema>;
