@@ -19,6 +19,8 @@ import { federacaoRoutes } from "./Modules/Federacoes/FederacaoRoutes";
 import { empresaJuniorRoutes } from "./Modules/EmpresasJuniores/EmpresaJuniorRoutes";
 import { capturaRoutes } from "@/Modules/Capturas/CapturaRoutes";
 
+import { rankingRoutes } from "./Modules/Ranking/RankingRoutes";
+
 const DEFAULT_RATE_LIMIT_MAX = 100;
 
 export interface AppOverrides {
@@ -84,6 +86,10 @@ export function buildApp(overrides: AppOverrides = {}) {
 
   app.register(capturaRoutes, {
     capturaService: container.capturaService,
+  });
+
+  app.register(rankingRoutes, {
+    rankingService: container.rankingService,
   });
 
   return app;

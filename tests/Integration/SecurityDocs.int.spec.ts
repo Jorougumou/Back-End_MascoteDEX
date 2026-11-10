@@ -49,5 +49,4 @@ describe("Swagger, helmet e CORS", () => {
     expect(response.headers["x-content-type-options"]).toBe("nosniff");
     expect(response.headers["x-powered-by"]).toBeUndefined();
   });
-
 });
