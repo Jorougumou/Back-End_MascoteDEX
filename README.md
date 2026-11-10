@@ -8,17 +8,17 @@ API REST desenvolvida em Node.js com TypeScript, Fastify, Prisma ORM, PostgreSQL
 
 ## Sumário
 
-- [Visão Geral e Arquitetura](#-visão-geral-e-arquitetura)
-- [Tech Stack & Tecnologias](#-tech-stack--tecnologias)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Pré-requisitos](#-pré-requisitos)
-- [Variáveis de Ambiente](#-variáveis-de-ambiente)
-- [Instalação e Execução Local](#-instalação-e-execução-local)
-- [Testes Automatizados](#-testes-automatizados)
-- [Rotas da API & Documentação](#-rotas-da-api--documentação)
-- [Regras de Negócio & Segurança](#-regras-de-negócio--segurança)
-- [Deploy](#-deploy)
-- [Contribuição e Convenções](#-contribuição-e-convenções)
+- [Visão Geral e Arquitetura](#visão-geral-e-arquitetura)
+- [Tech Stack & Tecnologias](#tech-stack--tecnologias)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Pré-requisitos](#pré-requisitos)
+- [Variáveis de Ambiente](#variáveis-de-ambiente)
+- [Instalação e Execução Local](#instalação-e-execução-local)
+- [Testes Automatizados](#testes-automatizados)
+- [Rotas da API & Documentação](#rotas-da-api--documentação)
+- [Regras de Negócio & Segurança](#regras-de-negócio--segurança)
+- [Deploy](#deploy)
+- [Contribuição e Convenções](#contribuição-e-convenções)
 
 ---
 
