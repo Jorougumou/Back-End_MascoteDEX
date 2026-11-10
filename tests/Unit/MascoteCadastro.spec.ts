@@ -25,6 +25,7 @@ function perfil(id = "mascote-1"): PerfilMascoteRegistro {
     nome: "Leão",
     fotoUrl: "https://storage.test/mascotes/leao.jpg",
     capturado: true,
+    capturadoEm: new Date("2026-11-08T12:00:00.000Z"),
     empresaJunior: {
       id: EJ_ID,
       nome: "Júnior Teste",

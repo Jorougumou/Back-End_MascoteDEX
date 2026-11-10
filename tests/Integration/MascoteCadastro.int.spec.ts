@@ -160,6 +160,7 @@ describe("POST /mascotes — cadastro e primeira captura (T-16)", () => {
       nome: "Leão",
       fotoUrl: storage.uploads[0]?.url,
       capturado: true,
+      capturadoEm: "2026-11-08T12:30:00.000Z",
       empresaJunior: {
         id: ej.id,
         nome: "Include Jr.",
