@@ -104,7 +104,7 @@ export const mascoteRoutes: FastifyPluginAsync<MascoteRoutesOptions> = async (
         tags: ["Mascotes"],
         summary: "Perfil detalhado do mascote",
         description:
-          "Retorna foto, nome, EJ (com universidade e curiosidades), federação/região e os eventos, com datas, em que o mascote foi capturado (mais recentes primeiro; cada evento aparece uma vez). O campo `capturado` indica se o usuário logado já capturou o mascote (mesma regra da galeria). Mascote inexistente retorna 404.",
+          "Retorna foto, nome, EJ (com universidade e curiosidades), federação/região e os eventos, com datas, em que o mascote foi capturado (mais recentes primeiro; cada evento aparece uma vez). Os campos `capturado` e `capturadoEm` indicam se o usuário logado já capturou o mascote e quando (data/hora UTC da primeira captura dele; `null` se ainda não capturou). Mascote inexistente retorna 404.",
         security: [{ bearerAuth: [] }],
         params: mascoteParamsSchema,
         response: {

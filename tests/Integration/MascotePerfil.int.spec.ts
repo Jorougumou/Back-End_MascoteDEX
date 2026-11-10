@@ -96,23 +96,30 @@ async function cenario(app: TestApp) {
     "2026-05-22",
   );
 
-  const capturar = (usuarioId: string, mascoteId: string, eventoId: string) =>
+  const capturar = (
+    usuarioId: string,
+    mascoteId: string,
+    eventoId: string,
+    capturadoEm: string,
+  ) =>
     prisma.captura.create({
       data: {
         usuarioId,
         mascoteId,
         eventoId,
         fotoUrl: "f",
-        capturadoEm: new Date(),
+        capturadoEm: new Date(capturadoEm),
       },
     });
   // Leão: capturado por Ana e Bia em Janeiro, só por Ana em Maio (Março não).
   // Bia só capturou o Leão (nunca o Tigre); Cadu não capturou nenhum.
-  await capturar(ana.id, leao.id, eventoJan.id);
-  await capturar(bia.id, leao.id, eventoJan.id);
-  await capturar(ana.id, leao.id, eventoMai.id);
+  // A captura mais recente da Ana (Maio) é inserida ANTES da mais antiga
+  // (Janeiro): `capturadoEm` deve ser a primeira captura, não a última gravada.
+  await capturar(ana.id, leao.id, eventoMai.id, "2026-05-20T15:30:00.000Z");
+  await capturar(ana.id, leao.id, eventoJan.id, "2026-01-10T13:00:00.000Z");
+  await capturar(bia.id, leao.id, eventoJan.id, "2026-01-10T18:45:00.000Z");
   // Tigre: capturado só em Março (não pode aparecer no perfil do Leão).
-  await capturar(ana.id, tigre.id, eventoMar.id);
+  await capturar(ana.id, tigre.id, eventoMar.id, "2026-03-05T12:00:00.000Z");
 
   return {
     ana,
@@ -185,6 +192,7 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
       nome: "Leão",
       fotoUrl: "https://exemplo.com/Leão.jpg",
       capturado: true,
+      capturadoEm: "2026-01-10T13:00:00.000Z",
       empresaJunior: {
         id: c.ejComCuriosidade.id,
         nome: "Júnior Consultoria",
@@ -207,6 +215,7 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
 
     expect(Object.keys(perfil).sort()).toEqual([
       "capturado",
+      "capturadoEm",
       "empresaJunior",
       "eventos",
       "federacao",
@@ -299,18 +308,24 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
     ).toEqual(["2027-06-01", "2027-04-01", "2027-03-01", "2027-02-01"]);
   });
 
-  it("o perfil é o mesmo para qualquer usuário autenticado, exceto o capturado", async () => {
+  it("o perfil é o mesmo para qualquer usuário autenticado, exceto capturado e capturadoEm", async () => {
     const c = await cenario(app);
 
-    const { capturado: daAnaCapturado, ...daAna } = (
-      await get(c.ana.token, c.leao.id)
-    ).json();
-    const { capturado: daBiaCapturado, ...daBia } = (
-      await get(c.bia.token, c.leao.id)
-    ).json();
-    const { capturado: doCaduCapturado, ...doCadu } = (
-      await get(c.cadu.token, c.leao.id)
-    ).json();
+    const {
+      capturado: daAnaCapturado,
+      capturadoEm: daAnaEm,
+      ...daAna
+    } = (await get(c.ana.token, c.leao.id)).json();
+    const {
+      capturado: daBiaCapturado,
+      capturadoEm: daBiaEm,
+      ...daBia
+    } = (await get(c.bia.token, c.leao.id)).json();
+    const {
+      capturado: doCaduCapturado,
+      capturadoEm: doCaduEm,
+      ...doCadu
+    } = (await get(c.cadu.token, c.leao.id)).json();
 
     expect(daBia).toEqual(daAna);
     expect(doCadu).toEqual(daAna);
@@ -319,11 +334,17 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
       true,
       false,
     ]);
+    expect([daAnaEm, daBiaEm, doCaduEm]).toEqual([
+      "2026-01-10T13:00:00.000Z",
+      "2026-01-10T18:45:00.000Z",
+      null,
+    ]);
   });
 
   it("mascote recém-cadastrado já traz a captura do cadastrante (RN009) e curiosidades nula", async () => {
     const c = await cenario(app);
     // Mesmo formato do cadastro real: mascote + primeira captura juntos.
+    const capturaDoLobo = new Date("2026-06-15T09:20:00.000Z");
     const lobo = await prisma.mascote.create({
       data: {
         nome: "Lobo",
@@ -340,7 +361,7 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
             usuarioId: c.ana.id,
             eventoId: c.eventoMai.id,
             fotoUrl: "f",
-            capturadoEm: new Date(),
+            capturadoEm: capturaDoLobo,
           },
         },
       },
@@ -355,7 +376,10 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
     ).toEqual(["Evento Maio"]);
     // O cadastrante já capturou o mascote (RN009); outro usuário ainda não.
     expect(resposta.json().capturado).toBe(true);
-    expect((await get(c.bia.token, lobo.id)).json().capturado).toBe(false);
+    expect(resposta.json().capturadoEm).toBe(capturaDoLobo.toISOString());
+    const daBia = (await get(c.bia.token, lobo.id)).json();
+    expect(daBia.capturado).toBe(false);
+    expect(daBia.capturadoEm).toBeNull();
   });
 
   it("perfil de um mascote não mostra os eventos de outro", async () => {
@@ -408,6 +432,42 @@ describe("GET /mascotes/:id — perfil do mascote (T-22)", () => {
         "Evento Janeiro",
       ]);
       expect(doCadu.eventos).toEqual(daBia.eventos);
+    });
+
+    it("capturadoEm é a data/hora da PRIMEIRA captura do próprio usuário, e não a de outros", async () => {
+      const c = await cenario(app);
+      const em = async (token: string, id: string) =>
+        (await get(token, id)).json().capturadoEm as string | null;
+
+      // Ana capturou o Leão em Janeiro (13:00) e em Maio (15:30): vale Janeiro,
+      // mesmo com Maio gravada antes. Bia capturou só em Janeiro (18:45).
+      expect(await em(c.ana.token, c.leao.id)).toBe("2026-01-10T13:00:00.000Z");
+      expect(await em(c.bia.token, c.leao.id)).toBe("2026-01-10T18:45:00.000Z");
+      expect(await em(c.ana.token, c.tigre.id)).toBe(
+        "2026-03-05T12:00:00.000Z",
+      );
+    });
+
+    it("capturadoEm é null para quem nunca capturou o mascote", async () => {
+      const c = await cenario(app);
+
+      expect(
+        (await get(c.cadu.token, c.leao.id)).json().capturadoEm,
+      ).toBeNull();
+      expect(
+        (await get(c.bia.token, c.tigre.id)).json().capturadoEm,
+      ).toBeNull();
+    });
+
+    it("capturado e capturadoEm sempre andam juntos (true com data; false com null)", async () => {
+      const c = await cenario(app);
+
+      for (const usuario of [c.ana, c.bia, c.cadu]) {
+        for (const mascote of [c.leao, c.tigre]) {
+          const perfil = (await get(usuario.token, mascote.id)).json();
+          expect(perfil.capturado).toBe(perfil.capturadoEm !== null);
+        }
+      }
     });
 
     it("bate com o `capturado` da galeria para o mesmo usuário e mascote", async () => {

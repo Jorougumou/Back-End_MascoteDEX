@@ -62,6 +62,7 @@ export function createMascoteService({
       nome: registro.nome,
       fotoUrl: registro.fotoUrl,
       capturado: registro.capturado,
+      capturadoEm: registro.capturadoEm?.toISOString() ?? null,
       empresaJunior,
       federacao,
       eventos: registro.eventos.map((evento) => ({
