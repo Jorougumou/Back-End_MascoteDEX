@@ -1,6 +1,6 @@
-# MascoteDex API — Back-End
+# MascotDex API — Back-End
 
-> **MascoteDex** é uma plataforma desenvolvida para os membros da **Include Jr.** catalogarem, colecionarem e visualizarem os mascotes das Empresas Juniores (EJs) durante grandes eventos do Movimento Empresa Júnior (MEJ), como ENEJ e ECEJ.
+> **MascotDex** é uma plataforma desenvolvida para os membros da **Include Jr.** catalogarem, colecionarem e visualizarem os mascotes das Empresas Juniores (EJs) durante grandes eventos do Movimento Empresa Júnior (MEJ), como ENEJ e ECEJ.
 
 API REST desenvolvida em Node.js com TypeScript, Fastify, Prisma ORM, PostgreSQL (Neon/Docker), Supabase Storage e Swagger.
 
